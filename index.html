@@ -1,107 +1,118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GO2cam — Accès sécurisé</title>
+  <meta name="theme-color" content="#00f7ff">
+  <style>
+    :root{
+      --bg:#0d0d0d; --card:#141414; --stroke:#2a2a2a; --txt:#e5e7eb; --muted:#9ca3af;
+      --brand:#00f7ff; --glow:0 0 10px #00f7ff, 0 0 20px #00f7ff;
+    }
+    *{box-sizing:border-box} html,body{height:100%;margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;background:#0d0d0d;color:var(--txt)}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0d0d0d}
+    .card{width:min(560px,92%);background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff33}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .dot{width:14px;height:14px;border-radius:4px;background:var(--brand);box-shadow:0 0 14px var(--brand)}
+    h1{margin:.2rem 0 1rem 0} p{margin:.2rem 0;color:var(--muted)}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:var(--txt);outline:none}
+    input:focus{border-color:var(--brand);box-shadow:0 0 0 4px #00f7ff40}
+    .btn{width:100%;padding:12px;border-radius:12px;border:1px solid transparent;font-weight:700;cursor:pointer}
+    .btn-primary{background:var(--brand);color:#031517;box-shadow:var(--glow)}
+    .btn-ghost{background:transparent;border:1px solid var(--stroke);color:var(--txt);margin-top:8px}
+    #loginMsg{color:var(--muted);min-height:1.2em;margin-top:6px}
+    /* zone contenu privé */
+    #secret{display:none;margin-top:18px;border:1px solid var(--stroke);border-radius:12px;padding:16px;background:#0f1214}
+    #secret h3{margin:0 0 .6rem 0;color:var(--brand)}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="brand"><div class="dot"></div><div style="font-weight:800;color:var(--brand);letter-spacing:.5px">GO2cam</div></div>
+      <h1>Espace client sécurisé</h1>
+      <p>Identifiez-vous pour accéder aux informations réservées.</p>
 
-  <!-- === Splash noir + Login GO2cam (email + mot de passe) === -->
-  <section id="secure-access" style="min-height:100vh;background:#0d0d0d;display:flex;align-items:center;justify-content:center;padding:24px">
-    <div style="width:min(560px,92%);background:#141414;border:1px solid #2a2a2a;border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff33">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <div style="width:14px;height:14px;border-radius:4px;background:#00f7ff;box-shadow:0 0 14px #00f7ff"></div>
-        <div style="font-weight:800;color:#00f7ff;letter-spacing:.5px">GO2cam</div>
-      </div>
-      <h2 style="margin:.2rem 0 1rem 0;color:#fff">Espace client sécurisé</h2>
-      <p style="color:#9ca3af;margin-top:0">Connectez-vous pour accéder aux informations réservées.</p>
-
+      <!-- Connexion -->
       <div id="step-login">
         <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
-          <input id="loginEmail" type="email" placeholder="Adresse e-mail"
-                 style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
-          <input id="loginPassword" type="password" placeholder="Mot de passe"
-                 style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
-          <button id="loginBtn"
-                  style="padding:12px;border-radius:12px;border:1px solid transparent;background:#00f7ff;color:#031517;font-weight:700;cursor:pointer;box-shadow:0 0 10px #00f7ff,0 0 20px #00f7ff">
-            Se connecter
-          </button>
-          <button id="resetBtn" type="button"
-                  style="padding:10px;border-radius:10px;border:1px solid #2a2a2a;background:transparent;color:#e5e7eb;cursor:pointer">
-            Mot de passe oublié ?
-          </button>
-          <p id="loginMsg" style="color:#9ca3af;margin:4px 0 0 0"></p>
+          <input id="loginEmail" type="email" placeholder="Adresse e-mail">
+          <input id="loginPassword" type="password" placeholder="Mot de passe">
+          <button id="loginBtn" class="btn btn-primary">Se connecter</button>
+          <button id="resetBtn" class="btn btn-ghost" type="button">Mot de passe oublié ?</button>
+          <p id="loginMsg"></p>
         </div>
       </div>
 
-      <div id="secret" style="display:none;margin-top:18px;border:1px solid #2a2a2a;border-radius:12px;padding:16px;background:#0f1214">
-        <h3 style="margin-top:0;color:#00f7ff">Contenu réservé</h3>
-        <div id="secretContent" style="color:#e5e7eb">Chargement…</div>
+      <!-- Contenu privé (chargé après login) -->
+      <div id="secret">
+        <h3>Contenu réservé</h3>
+        <div id="secretContent">Chargement…</div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ⚠️ RENSEIGNE CES 2 VALEURS
-    const SUPABASE_URL = "https://XXXXXX.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJ...";
+    // ⚠️ REMPLACE ces 2 constantes par tes valeurs (Supabase → Settings → API)
+    const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
+    // Chemin de ta page privée (déjà uploadée dans le bucket privé)
     const STORAGE_BUCKET = "prive";
     const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // UI secure
+    // Elements UI
     const emailEl = document.getElementById('loginEmail');
-    const passEl = document.getElementById('loginPassword');
-    const loginBtn = document.getElementById('loginBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const loginMsg = document.getElementById('loginMsg');
+    const passEl  = document.getElementById('loginPassword');
+    const loginBtn= document.getElementById('loginBtn');
+    const resetBtn= document.getElementById('resetBtn');
+    const loginMsg= document.getElementById('loginMsg');
     const stepLogin = document.getElementById('step-login');
-    const secret = document.getElementById('secret');
+    const secret     = document.getElementById('secret');
     const secretContent = document.getElementById('secretContent');
 
-    // Connexion email + mot de passe
+    // Connexion
     loginBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
       const password = (passEl.value || "");
-      if (!email || !password) { loginMsg.textContent = "Entrez votre e-mail et mot de passe."; return; }
+      if (!email || !password) { loginMsg.textContent = "Entrez votre e-mail et votre mot de passe."; return; }
 
       loginMsg.textContent = "Connexion…";
-      try {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) { loginMsg.textContent = "Échec de connexion : " + error.message; return; }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { loginMsg.textContent = "Échec de connexion : " + error.message; return; }
 
-        // Récupérer le HTML privé
-        const { data: signed, error: signErr } = await supabase
-          .storage.from(STORAGE_BUCKET)
-          .createSignedUrl(PRIVATE_FILE_PATH, 120);
-        if (signErr) { loginMsg.textContent = "Accès au contenu impossible."; return; }
+      // OK → lien signé + affichage du HTML privé
+      const { data: signed, error: signErr } = await supabase
+        .storage.from(STORAGE_BUCKET)
+        .createSignedUrl(PRIVATE_FILE_PATH, 120);
+      if (signErr) { loginMsg.textContent = "Accès au contenu impossible."; return; }
 
-        const res = await fetch(signed.signedUrl, { cache: "no-store" });
-        const html = await res.text();
-        secretContent.innerHTML = html;
-        stepLogin.style.display = "none";
-        secret.style.display = "block";
-      } catch (err) {
-        loginMsg.textContent = "Erreur inattendue.";
-        console.error(err);
-      }
+      const res = await fetch(signed.signedUrl, { cache: "no-store" });
+      const html = await res.text();
+      secretContent.innerHTML = html;
+      stepLogin.style.display = "none";
+      secret.style.display = "block";
     });
 
-    // Mot de passe oublié
+    // Mot de passe oublié → e-mail de réinitialisation
     resetBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
-      if (!email) { loginMsg.textContent = "Indiquez votre e-mail puis cliquez à nouveau."; return; }
+      if (!email) { loginMsg.textContent = "Saisissez votre e-mail puis cliquez sur « Mot de passe oublié ? »"; return; }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://salaktum-coder.github.io/CLIENTS/"
+        redirectTo: "https://salaktum-coder.github.io/CLIENTS/" // même URL que dans Auth → URL Configuration
       });
       loginMsg.textContent = error ? ("Impossible d’envoyer l’e-mail : " + error.message)
                                    : "E-mail de réinitialisation envoyé (vérifiez vos spams).";
     });
 
-    // Auto-connexion (session persistante)
+    // Si une session existe déjà → charger directement le contenu
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
