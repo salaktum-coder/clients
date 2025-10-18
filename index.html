@@ -11,15 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg-dark:#0d0d0d;
-      --bg-soft:#1c1c1c;
-      --primary:#00f7ff;
-      --primary-2:#00c9d6;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --card:#141414;
-      --stroke:#2a2a2a;
-      --ring:rgba(0,247,255,.4);
+      --bg-dark:#0d0d0d; --bg-soft:#1c1c1c; --primary:#00f7ff; --primary-2:#00c9d6;
+      --text:#e5e7eb; --muted:#9ca3af; --card:#141414; --stroke:#2a2a2a; --ring:rgba(0,247,255,.4);
       --neon-glow:0 0 10px #00f7ff,0 0 20px #00f7ff,0 0 40px #00f7ff;
     }
     *{box-sizing:border-box}
@@ -28,7 +21,6 @@
     a{color:inherit;text-decoration:none}
     [hidden]{display:none !important}
     .container{width:min(1100px,92%);margin-inline:auto}
-
     header{position:sticky;top:0;z-index:50;background:rgba(20,20,20,.9);backdrop-filter:blur(8px);border-bottom:2px solid var(--primary)}
     .nav{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
     .logo{font-weight:800;color:var(--primary)}
@@ -38,11 +30,9 @@
     .btn-pri:hover{transform:translateY(-1px) scale(1.03);background:var(--primary-2)}
     .btn-ghost{background:transparent;border-color:var(--stroke);color:var(--text)}
     .btn-ghost:hover{border-color:var(--primary);box-shadow:var(--neon-glow)}
-
     .hero{padding:3rem 0 1.2rem}
     h1{font-size:clamp(1.8rem,3.2vw,2.4rem);margin:.4rem 0;color:#fff}
     p.lead{color:var(--muted)}
-
     .plans{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
     .plan{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:1rem;transition:.25s;cursor:pointer;position:relative}
     .plan.active{border-color:var(--primary);box-shadow:var(--neon-glow)}
@@ -52,7 +42,6 @@
     .features{margin:.8rem 0 0 1rem}
     .features li{margin:.25rem 0}
     .badge{position:absolute;top:10px;right:10px;border:1px solid var(--primary);padding:.25rem .5rem;border-radius:999px;font-size:.75rem;color:var(--primary)}
-
     .grid-2{display:grid;grid-template-columns:1.2fr .8fr;gap:1rem;margin-top:1rem}
     form{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:1rem}
     .field{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.8rem}
@@ -60,15 +49,12 @@
     .field input:focus,.field select:focus,.field textarea:focus{outline:none;box-shadow:0 0 0 4px var(--ring);border-color:var(--primary)}
     fieldset{border:1px dashed var(--stroke);border-radius:12px;padding:1rem;margin:.6rem 0}
     legend{padding:0 .6rem;color:#cbd5e1}
-
     table.comp{width:100%;border-collapse:collapse;border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
     table.comp th, table.comp td{border-bottom:1px solid var(--stroke);padding:.7rem;text-align:left}
     table.comp th{background:#101010;color:#cbd5e1}
     table.comp tr:last-child td{border:0}
-
     .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:1rem}
     .callout{border:1px solid var(--primary);box-shadow:var(--neon-glow);border-radius:14px;padding:.8rem;margin:.8rem 0;background:#0f1214}
-
     footer{color:#cbd5e1;border-top:1px solid var(--stroke);margin-top:2rem;padding:1rem 0}
     @media(max-width:900px){.plans,.grid-2{grid-template-columns:1fr}}
   </style>
@@ -87,7 +73,7 @@
       <h1>Évolution de la maintenance GO2cam&nbsp;— choisissez votre formule</h1>
       <p class="lead">Sans réponse avant le 31/12/2025, votre contrat bascule par défaut vers <strong>Essentiel</strong>. La formule <strong>Premium</strong> est disponible sur demande.</p>
 
-      <!-- VIDEO placée au-dessus des choix de formules -->
+      <!-- VIDEO -->
       <section class="card" id="video">
         <h3>Nouveautés GO2cam&nbsp;2026 — vidéo courte</h3>
         <div class="callout">
@@ -99,7 +85,6 @@
           </ul>
         </div>
         <video id="video-nouveautes" width="100%" controls playsinline poster="poster-nouveautes-2026.jpg" style="border-radius:12px;border:1px solid var(--stroke)">
-          <!-- Remplacez la source par votre fichier/URL -->
           <source src="nouveautes-2026.mp4" type="video/mp4">
           Votre navigateur ne prend pas en charge la vidéo HTML5.
         </video>
@@ -112,16 +97,13 @@
           <h3>Essentiel</h3>
           <p class="price">15&nbsp;% du <strong>prix catalogue de la licence</strong></p>
           <ul class="features">
-            <li>Appel téléphonique &amp; e‑mail</li>
+            <li>Appel téléphonique &amp; e-mail</li>
             <li>Prise en main à distance</li>
             <li><strong>Installation du logiciel en local</strong></li>
             <li><strong>Hotline&nbsp;: 2&nbsp;h/an</strong></li>
             <tr><td>Formation nouveautés </td><td colspan="2">Inter-entreprises&nbsp;: <strong><span style="color:#00f7ff;">500&nbsp;€ HT/pers.</span></strong> (au lieu de 800&nbsp;€)</td></tr>
-
           </ul>
-          <div style="margin-top:.8rem">
-            <a class="btn btn-ghost" href="#form">Choisir Essentiel</a>
-          </div>
+          <div style="margin-top:.8rem"><a class="btn btn-ghost" href="#form">Choisir Essentiel</a></div>
         </article>
 
         <article id="plan-premium" class="plan" role="listitem" tabindex="0" aria-label="Formule Premium">
@@ -129,17 +111,14 @@
           <h3>Premium</h3>
           <p class="price">18&nbsp;% du <strong>prix catalogue de la licence</strong></p>
           <ul class="features">
-            <li>Appel téléphonique &amp; e‑mail</li>
+            <li>Appel téléphonique &amp; e-mail</li>
             <li>Prise en main à distance</li>
             <li><strong>Installation du logiciel sur serveur</strong></li>
             <li><strong>Hotline&nbsp;: 7&nbsp;h/an</strong></li>
-            <li><strong>Remise jusqu’à 10&nbsp;%</strong> sur post‑processeur ou nouvelle licence</li>
+            <li><strong>Remise jusqu’à 10&nbsp;%</strong> sur post-processeur ou nouvelle licence</li>
             <tr><td>Formation nouveautés </td><td colspan="2">Inter-entreprises&nbsp;: <strong><span style="color:#00f7ff;">500&nbsp;€ HT/pers.</span></strong> (au lieu de 800&nbsp;€)</td></tr>
-
           </ul>
-          <div style="margin-top:.8rem">
-            <a class="btn btn-pri" href="#form">Choisir Premium</a>
-          </div>
+          <div style="margin-top:.8rem"><a class="btn btn-pri" href="#form">Choisir Premium</a></div>
         </article>
       </div>
     </section>
@@ -151,18 +130,17 @@
           <tr><th>Critère</th><th>Essentiel</th><th>Premium</th></tr>
           <tr><td>Hotline</td><td>2&nbsp;h/an</td><td>7&nbsp;h/an</td></tr>
           <tr><td>Installation</td><td>Logiciel en local</td><td>Logiciel sur serveur</td></tr>
-          <tr><td>Canaux</td><td>Téléphone, e‑mail</td><td>Téléphone, e‑mail</td></tr>
+          <tr><td>Canaux</td><td>Téléphone, e-mail</td><td>Téléphone, e-mail</td></tr>
           <tr><td>Prise en main à distance</td><td>Incluse</td><td>Incluse</td></tr>
-          <tr><td>Avantage additionnel</td><td>—</td><td>Remise jusqu’à 10&nbsp;% (post‑processeur / nouvelle licence)</td></tr>
-          <tr><td>Formation nouveautés</td><td colspan="2">Inter‑entreprises&nbsp;: <strong>500&nbsp;€ HT/pers.</strong> (au lieu de 800&nbsp;€)</td></tr>
+          <tr><td>Avantage additionnel</td><td>—</td><td>Remise jusqu’à 10&nbsp;% (post-processeur / nouvelle licence)</td></tr>
+          <tr><td>Formation nouveautés</td><td colspan="2">Inter-entreprises&nbsp;: <strong>500&nbsp;€ HT/pers.</strong> (au lieu de 800&nbsp;€)</td></tr>
         </table>
         <p class="muted" style="margin-top:.6rem">Conditions d’application&nbsp;: entrée en vigueur 01/01/2026. Sans réponse avant le 31/12/2025, bascule automatique vers Essentiel.</p>
       </div>
 
       <form id="form" aria-label="Formulaire de confirmation">
         <h3>Confirmer mon choix</h3>
-        <div class="field">
-          <label>Formule*</label>
+        <div class="field"><label>Formule*</label>
           <select id="choix" required>
             <option value="">Sélectionner…</option>
             <option value="essentiel">Essentiel</option>
@@ -175,23 +153,13 @@
         <div class="field"><label>Email*</label><input id="email" type="email" required></div>
         <div class="field"><label>Téléphone</label><input id="tel" type="tel"></div>
 
-        <!-- Logiciel CAO en interne -->
-        <div class="field">
-          <label>Logiciel CAO en interne</label>
+        <div class="field"><label>Logiciel CAO en interne</label>
           <select id="logiciel-cao">
             <option value="">Sélectionner…</option>
-            <option>CATIA</option>
-            <option>SolidWorks</option>
-            <option>TopSolid</option>
-            <option>Autodesk Inventor</option>
-            <option>AutoCAD</option>
-            <option>PTC&nbsp;Creo</option>
-            <option>Siemens NX</option>
-            <option>Solid Edge</option>
-            <option>Fusion&nbsp;360</option>
-            <option>DraftSight</option>
-            <option>Onshape</option>
-            <option>Rhinoceros&nbsp;3D</option>
+            <option>CATIA</option><option>SolidWorks</option><option>TopSolid</option>
+            <option>Autodesk Inventor</option><option>AutoCAD</option><option>PTC&nbsp;Creo</option>
+            <option>Siemens NX</option><option>Solid Edge</option><option>Fusion&nbsp;360</option>
+            <option>DraftSight</option><option>Onshape</option><option>Rhinoceros&nbsp;3D</option>
             <option value="autre">Autre (préciser)</option>
           </select>
         </div>
@@ -212,18 +180,16 @@
     <section>
       <div class="card">
         <h3>FAQ</h3>
-        <p><strong>Pourquoi cette évolution&nbsp;?</strong> L’indice SYNTEC n’a pas été appliqué depuis 13 ans (+29,7&nbsp;%), alors que les coûts (structure, main‑d’œuvre, achats, logistique) ont augmenté.</p>
-        <p><strong>Qu’est‑ce qui change&nbsp;?</strong> Nouveaux tarifs au 01/01/2026 et <strong>recalage des dates</strong> au 1er janvier.</p>
+        <p><strong>Pourquoi cette évolution&nbsp;?</strong> L’indice SYNTEC n’a pas été appliqué depuis 13 ans (+29,7&nbsp;%), alors que les coûts (structure, main-d’œuvre, achats, logistique) ont augmenté.</p>
+        <p><strong>Qu’est-ce qui change&nbsp;?</strong> Nouveaux tarifs au 01/01/2026 et <strong>recalage des dates</strong> au 1er janvier.</p>
         <p><strong>Et si je ne réponds pas&nbsp;?</strong> Bascule automatique vers <strong>Essentiel</strong> au 01/01/2026.</p>
-        <p><strong>Puis‑je changer d’avis&nbsp;?</strong> Oui, sur demande auprès de votre interlocuteur commercial, selon les conditions de votre contrat.</p>
+        <p><strong>Puis-je changer d’avis&nbsp;?</strong> Oui, sur demande auprès de votre interlocuteur commercial, selon les conditions de votre contrat.</p>
         <p><strong>Contact</strong>&nbsp;: <a href="mailto:support@go2cam.fr">support@go2cam.fr</a></p>
       </div>
     </section>
   </main>
 
-  <footer class="container">
-    <p>© 2025 GO2cam – Tous droits réservés.</p>
-  </footer>
+  <footer class="container"><p>© 2025 GO2cam – Tous droits réservés.</p></footer>
 
   <script>
     // Surbrillance plans & pré-remplissage
@@ -232,186 +198,141 @@
     const choix = document.getElementById('choix');
     const status = document.getElementById('status');
 
-    function setActive(which) {
-      planEssentiel.classList.toggle('active', which === 'essentiel');
-      planPremium.classList.toggle('active', which === 'premium');
-      if (which) choix.value = which;
-    }
+    function setActive(which){ planEssentiel.classList.toggle('active',which==='essentiel'); planPremium.classList.toggle('active',which==='premium'); if(which) choix.value=which; }
+    const urlParams=new URLSearchParams(window.location.search); const preset=urlParams.get('choix'); if(preset==='premium'||preset==='essentiel') setActive(preset);
+    planEssentiel.addEventListener('click',()=>setActive('essentiel')); planPremium.addEventListener('click',()=>setActive('premium'));
+    planEssentiel.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ') setActive('essentiel')}); planPremium.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ') setActive('premium')});
 
-    // Paramètre d'URL ?choix=...
-    const urlParams = new URLSearchParams(window.location.search);
-    const preset = urlParams.get('choix');
-    if (preset === 'premium' || preset === 'essentiel') setActive(preset);
+    const selectCao=document.getElementById('logiciel-cao'); const fieldAutre=document.getElementById('field-cao-autre'); const inputAutre=document.getElementById('cao-autre');
+    selectCao.addEventListener('change',()=>{const show=selectCao.value==='autre'; fieldAutre.hidden=!show; if(!show) inputAutre.value='';});
 
-    // Clics et clavier sur les cartes
-    planEssentiel.addEventListener('click', () => setActive('essentiel'));
-    planPremium.addEventListener('click', () => setActive('premium'));
-    planEssentiel.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') setActive('essentiel'); });
-    planPremium.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') setActive('premium'); });
-
-    // Afficher le champ "Autre CAO" si nécessaire
-    const selectCao = document.getElementById('logiciel-cao');
-    const fieldAutre = document.getElementById('field-cao-autre');
-    const inputAutre = document.getElementById('cao-autre');
-    selectCao.addEventListener('change', () => {
-      const show = selectCao.value === 'autre';
-      fieldAutre.hidden = !show;
-      if (!show) inputAutre.value = '';
-    });
-
-    // Envoi (mailto)
-    document.getElementById('form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const form = e.target;
-      if(!form.checkValidity()) { form.reportValidity(); return; }
-
-      const data = {
-        choix: document.getElementById('choix').value,
-        societe: document.getElementById('societe').value,
-        nom: document.getElementById('nom').value,
-        email: document.getElementById('email').value,
-        tel: document.getElementById('tel').value,
-        logicielCao: selectCao.value === 'autre' ? (inputAutre.value || 'Autre (non précisé)') : (selectCao.value || 'Non renseigné')
-      };
-
-      const subject = encodeURIComponent('GO2cam – Choix maintenance 2026');
-      const body = encodeURIComponent(
-`Formule: ${data.choix}
+    document.getElementById('form').addEventListener('submit',function(e){
+      e.preventDefault(); const form=e.target; if(!form.checkValidity()){ form.reportValidity(); return;}
+      const data={choix:document.getElementById('choix').value,societe:document.getElementById('societe').value,nom:document.getElementById('nom').value,email:document.getElementById('email').value,tel:document.getElementById('tel').value,logicielCao:selectCao.value==='autre'?(inputAutre.value||'Autre (non précisé)'):(selectCao.value||'Non renseigné')};
+      const subject=encodeURIComponent('GO2cam – Choix maintenance 2026');
+      const body=encodeURIComponent(`Formule: ${data.choix}
 Entreprise: ${data.societe}
 Nom: ${data.nom}
 Email: ${data.email}
 Téléphone: ${data.tel}
 
-Logiciel CAO en interne: ${data.logicielCao}`
-      );
-      window.location.href = `mailto:support@go2cam.fr?subject=${subject}&body=${body}`;
-      status.textContent = 'Ouverture de votre messagerie…';
+Logiciel CAO en interne: ${data.logicielCao}`);
+      window.location.href=`mailto:support@go2cam.fr?subject=${subject}&body=${body}`; status.textContent='Ouverture de votre messagerie…';
     });
   </script>
-  <!-- === Espace client sécurisé (correctif) === -->
-<!-- === Splash noir + Login GO2cam === -->
-<section id="secure-access" style="min-height:100vh;background:#0d0d0d;display:flex;align-items:center;justify-content:center;padding:24px">
-  <div style="width:min(560px,92%);background:#141414;border:1px solid #2a2a2a;border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff33">
-    <!-- Logo / header -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <div style="width:14px;height:14px;border-radius:4px;background:#00f7ff;box-shadow:0 0 14px #00f7ff"></div>
-      <div style="font-weight:800;color:#00f7ff;letter-spacing:.5px">GO2cam</div>
-    </div>
-    <h2 style="margin:.2rem 0 1rem 0;color:#fff">Espace client sécurisé</h2>
-    <p style="color:#9ca3af;margin-top:0">Connectez-vous pour accéder aux informations réservées.</p>
 
-    <!-- Étape Login -->
-    <div id="step-login">
-      <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="loginEmail" type="email" placeholder="Adresse e-mail"
-               style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
-        <input id="loginPassword" type="password" placeholder="Mot de passe"
-               style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
-        <button id="loginBtn"
-                style="padding:12px;border-radius:12px;border:1px solid transparent;background:#00f7ff;color:#031517;font-weight:700;cursor:pointer;box-shadow:0 0 10px #00f7ff,0 0 20px #00f7ff">
-          Se connecter
-        </button>
-        <button id="resetBtn" type="button"
-                style="padding:10px;border-radius:10px;border:1px solid #2a2a2a;background:transparent;color:#e5e7eb;cursor:pointer">
-          Mot de passe oublié ?
-        </button>
-        <p id="loginMsg" style="color:#9ca3af;margin:4px 0 0 0"></p>
+  <!-- === Splash noir + Login GO2cam (email + mot de passe) === -->
+  <section id="secure-access" style="min-height:100vh;background:#0d0d0d;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:min(560px,92%);background:#141414;border:1px solid #2a2a2a;border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff33">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:14px;height:14px;border-radius:4px;background:#00f7ff;box-shadow:0 0 14px #00f7ff"></div>
+        <div style="font-weight:800;color:#00f7ff;letter-spacing:.5px">GO2cam</div>
+      </div>
+      <h2 style="margin:.2rem 0 1rem 0;color:#fff">Espace client sécurisé</h2>
+      <p style="color:#9ca3af;margin-top:0">Connectez-vous pour accéder aux informations réservées.</p>
+
+      <div id="step-login">
+        <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
+          <input id="loginEmail" type="email" placeholder="Adresse e-mail"
+                 style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
+          <input id="loginPassword" type="password" placeholder="Mot de passe"
+                 style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
+          <button id="loginBtn"
+                  style="padding:12px;border-radius:12px;border:1px solid transparent;background:#00f7ff;color:#031517;font-weight:700;cursor:pointer;box-shadow:0 0 10px #00f7ff,0 0 20px #00f7ff">
+            Se connecter
+          </button>
+          <button id="resetBtn" type="button"
+                  style="padding:10px;border-radius:10px;border:1px solid #2a2a2a;background:transparent;color:#e5e7eb;cursor:pointer">
+            Mot de passe oublié ?
+          </button>
+          <p id="loginMsg" style="color:#9ca3af;margin:4px 0 0 0"></p>
+        </div>
+      </div>
+
+      <div id="secret" style="display:none;margin-top:18px;border:1px solid #2a2a2a;border-radius:12px;padding:16px;background:#0f1214">
+        <h3 style="margin-top:0;color:#00f7ff">Contenu réservé</h3>
+        <div id="secretContent" style="color:#e5e7eb">Chargement…</div>
       </div>
     </div>
+  </section>
 
-    <!-- Étape contenu sécurisé -->
-    <div id="secret" style="display:none;margin-top:18px;border:1px solid #2a2a2a;border-radius:12px;padding:16px;background:#0f1214">
-      <h3 style="margin-top:0;color:#00f7ff">Contenu réservé</h3>
-      <div id="secretContent" style="color:#e5e7eb">Chargement…</div>
-    </div>
-  </div>
-</section>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ⚠️ RENSEIGNE CES 2 VALEURS
+    const SUPABASE_URL = "https://XXXXXX.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJ...";
 
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // ⚠️ Remplace par tes valeurs (Settings → API)
-  const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
+    const STORAGE_BUCKET = "prive";
+    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
 
-  // Chemin vers ta page privée
-  const STORAGE_BUCKET = "prive";
-  const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // UI secure
+    const emailEl = document.getElementById('loginEmail');
+    const passEl = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const loginMsg = document.getElementById('loginMsg');
+    const stepLogin = document.getElementById('step-login');
+    const secret = document.getElementById('secret');
+    const secretContent = document.getElementById('secretContent');
 
-  // Éléments UI
-  const emailEl = document.getElementById('loginEmail');
-  const passEl = document.getElementById('loginPassword');
-  const loginBtn = document.getElementById('loginBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const loginMsg = document.getElementById('loginMsg');
-  const stepLogin = document.getElementById('step-login');
-  const secret = document.getElementById('secret');
-  const secretContent = document.getElementById('secretContent');
+    // Connexion email + mot de passe
+    loginBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = (emailEl.value || "").trim();
+      const password = (passEl.value || "");
+      if (!email || !password) { loginMsg.textContent = "Entrez votre e-mail et mot de passe."; return; }
 
-  // Connexion email + mot de passe
-  loginBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const email = (emailEl.value || "").trim();
-    const password = (passEl.value || "");
-    if (!email || !password) { loginMsg.textContent = "Entrez votre e-mail et mot de passe."; return; }
+      loginMsg.textContent = "Connexion…";
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) { loginMsg.textContent = "Échec de connexion : " + error.message; return; }
 
-    loginMsg.textContent = "Connexion…";
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { loginMsg.textContent = "Échec de connexion : " + error.message; return; }
+        // Récupérer le HTML privé
+        const { data: signed, error: signErr } = await supabase
+          .storage.from(STORAGE_BUCKET)
+          .createSignedUrl(PRIVATE_FILE_PATH, 120);
+        if (signErr) { loginMsg.textContent = "Accès au contenu impossible."; return; }
 
-      // OK → récupérer un lien signé et afficher la page privée
-      const { data: signed, error: signErr } = await supabase
-        .storage.from(STORAGE_BUCKET)
-        .createSignedUrl(PRIVATE_FILE_PATH, 120);
-      if (signErr) { loginMsg.textContent = "Accès au contenu impossible."; return; }
+        const res = await fetch(signed.signedUrl, { cache: "no-store" });
+        const html = await res.text();
+        secretContent.innerHTML = html;
+        stepLogin.style.display = "none";
+        secret.style.display = "block";
+      } catch (err) {
+        loginMsg.textContent = "Erreur inattendue.";
+        console.error(err);
+      }
+    });
 
-      const res = await fetch(signed.signedUrl, { cache: "no-store" });
-      const html = await res.text();
-      secretContent.innerHTML = html;
-      stepLogin.style.display = "none";
-      secret.style.display = "block";
-    } catch (err) {
-      loginMsg.textContent = "Erreur inattendue.";
-      console.error(err);
-    }
-  });
-
-  // Mot de passe oublié
-  resetBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const email = (emailEl.value || "").trim();
-    if (!email) { loginMsg.textContent = "Indiquez votre e-mail puis cliquez à nouveau."; return; }
-    try {
+    // Mot de passe oublié
+    resetBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = (emailEl.value || "").trim();
+      if (!email) { loginMsg.textContent = "Indiquez votre e-mail puis cliquez à nouveau."; return; }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://salaktum-coder.github.io/CLIENTS/" // URL autorisée dans Auth → URL Configuration
+        redirectTo: "https://salaktum-coder.github.io/CLIENTS/"
       });
       loginMsg.textContent = error ? ("Impossible d’envoyer l’e-mail : " + error.message)
                                    : "E-mail de réinitialisation envoyé (vérifiez vos spams).";
-    } catch (err) {
-      loginMsg.textContent = "Erreur inattendue.";
-    }
-  });
+    });
 
-  // Si l'utilisateur revient avec une session active → charge directement
-  (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: signed } = await supabase.storage.from(STORAGE_BUCKET)
-        .createSignedUrl(PRIVATE_FILE_PATH, 120);
-      if (signed?.signedUrl) {
-        const res = await fetch(signed.signedUrl, { cache: "no-store" });
-        secretContent.innerHTML = await res.text();
-        stepLogin.style.display = "none";
-        secret.style.display = "block";
+    // Auto-connexion (session persistante)
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: signed } = await supabase.storage.from(STORAGE_BUCKET)
+          .createSignedUrl(PRIVATE_FILE_PATH, 120);
+        if (signed?.signedUrl) {
+          const res = await fetch(signed.signedUrl, { cache: "no-store" });
+          secretContent.innerHTML = await res.text();
+          stepLogin.style.display = "none";
+          secret.style.display = "block";
+        }
       }
-    }
-  })();
-</script>
-
-</script>
-
+    })();
+  </script>
 </body>
 </html>
