@@ -289,110 +289,128 @@ Logiciel CAO en interne: ${data.logicielCao}`
     });
   </script>
   <!-- === Espace client sécurisé (correctif) === -->
-<section id="secure-access" style="max-width:520px;margin:24px auto;font-family:system-ui">
-  <h2>Espace client sécurisé</h2>
-  <div id="step-email">
-    <input type="email" id="loginEmail" placeholder="votre@email.com" style="width:100%;padding:10px">
-    <button id="sendCodeBtn" type="button" style="padding:10px;margin-top:8px">Recevoir le code</button>
-    <p id="emailMsg" style="color:#666"></p>
-  </div>
-  <div id="step-otp" style="display:none">
-    <input id="otp" placeholder="Code à 6 chiffres" style="width:100%;padding:10px">
-    <button id="verifyBtn" type="button" style="padding:10px;margin-top:8px">Valider</button>
-    <p id="otpMsg" style="color:#666"></p>
-  </div>
-  <div id="secret" style="display:none;margin-top:16px;border:1px solid #ddd;padding:16px;border-radius:12px">
-    <h3>Contenu réservé</h3>
-    <div id="secretContent">Chargement…</div>
+<!-- === Splash noir + Login GO2cam === -->
+<section id="secure-access" style="min-height:100vh;background:#0d0d0d;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:min(560px,92%);background:#141414;border:1px solid #2a2a2a;border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff33">
+    <!-- Logo / header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:14px;height:14px;border-radius:4px;background:#00f7ff;box-shadow:0 0 14px #00f7ff"></div>
+      <div style="font-weight:800;color:#00f7ff;letter-spacing:.5px">GO2cam</div>
+    </div>
+    <h2 style="margin:.2rem 0 1rem 0;color:#fff">Espace client sécurisé</h2>
+    <p style="color:#9ca3af;margin-top:0">Connectez-vous pour accéder aux informations réservées.</p>
+
+    <!-- Étape Login -->
+    <div id="step-login">
+      <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
+        <input id="loginEmail" type="email" placeholder="Adresse e-mail"
+               style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
+        <input id="loginPassword" type="password" placeholder="Mot de passe"
+               style="padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:#e5e7eb;outline:none">
+        <button id="loginBtn"
+                style="padding:12px;border-radius:12px;border:1px solid transparent;background:#00f7ff;color:#031517;font-weight:700;cursor:pointer;box-shadow:0 0 10px #00f7ff,0 0 20px #00f7ff">
+          Se connecter
+        </button>
+        <button id="resetBtn" type="button"
+                style="padding:10px;border-radius:10px;border:1px solid #2a2a2a;background:transparent;color:#e5e7eb;cursor:pointer">
+          Mot de passe oublié ?
+        </button>
+        <p id="loginMsg" style="color:#9ca3af;margin:4px 0 0 0"></p>
+      </div>
+    </div>
+
+    <!-- Étape contenu sécurisé -->
+    <div id="secret" style="display:none;margin-top:18px;border:1px solid #2a2a2a;border-radius:12px;padding:16px;background:#0f1214">
+      <h3 style="margin-top:0;color:#00f7ff">Contenu réservé</h3>
+      <div id="secretContent" style="color:#e5e7eb">Chargement…</div>
+    </div>
   </div>
 </section>
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ⚠️ REMPLACE ces 2 valeurs par celles de Supabase → Settings → API
+  // ⚠️ Remplace par tes valeurs (Settings → API)
   const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-  // ✅ bonne initialisation (CDN v2)
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Sélecteurs (note: on utilise loginEmail pour éviter le conflit avec l’autre input#email)
-  const stepEmail = document.getElementById('step-email');
-  const loginEmail = document.getElementById('loginEmail');
-  const sendCodeBtn = document.getElementById('sendCodeBtn');
-  const emailMsg = document.getElementById('emailMsg');
-
-  const stepOtp = document.getElementById('step-otp');
-  const otpInput = document.getElementById('otp');
-  const verifyBtn = document.getElementById('verifyBtn');
-  const otpMsg = document.getElementById('otpMsg');
-
-  const secret = document.getElementById('secret');
-  const secretContent = document.getElementById('secretContent');
-
+  // Chemin vers ta page privée
   const STORAGE_BUCKET = "prive";
   const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
 
-  let currentEmail = null;
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // 1) Envoi OTP
-  sendCodeBtn.addEventListener('click', async (e) => {
+  // Éléments UI
+  const emailEl = document.getElementById('loginEmail');
+  const passEl = document.getElementById('loginPassword');
+  const loginBtn = document.getElementById('loginBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const loginMsg = document.getElementById('loginMsg');
+  const stepLogin = document.getElementById('step-login');
+  const secret = document.getElementById('secret');
+  const secretContent = document.getElementById('secretContent');
+
+  // Connexion email + mot de passe
+  loginBtn.addEventListener('click', async (e) => {
     e.preventDefault();
-    const email = (loginEmail.value || "").trim();
-    if (!email) { emailMsg.textContent = "Entrez un e-mail valide."; return; }
-    emailMsg.textContent = "Envoi du code…";
-    currentEmail = email;
-    console.log("[OTP] sending to", email);
+    const email = (emailEl.value || "").trim();
+    const password = (passEl.value || "");
+    if (!email || !password) { loginMsg.textContent = "Entrez votre e-mail et mot de passe."; return; }
 
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) {
-      console.error("[OTP] error:", error);
-      emailMsg.textContent = "Erreur : " + error.message;
-      return;
-    }
-    emailMsg.textContent = "Code envoyé. Vérifiez votre boîte mail.";
-    stepEmail.style.display = "none";
-    stepOtp.style.display = "block";
-  });
-
-  // 2) Vérification OTP
-  verifyBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const otp = (otpInput.value || "").trim();
-    if (!otp) { otpMsg.textContent = "Entrez le code reçu."; return; }
-    otpMsg.textContent = "Vérification…";
-
-    const { error } = await supabase.auth.verifyOtp({
-      email: currentEmail, token: otp, type: 'email'
-    });
-    if (error) {
-      console.error("[OTP] verify error:", error);
-      otpMsg.textContent = "Code invalide ou expiré.";
-      return;
-    }
-
-    otpMsg.textContent = "Connecté ! Chargement du contenu…";
-    stepOtp.style.display = "none";
-
-    // 3) Lien signé et affichage du HTML privé
+    loginMsg.textContent = "Connexion…";
     try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { loginMsg.textContent = "Échec de connexion : " + error.message; return; }
+
+      // OK → récupérer un lien signé et afficher la page privée
       const { data: signed, error: signErr } = await supabase
         .storage.from(STORAGE_BUCKET)
-        .createSignedUrl(PRIVATE_FILE_PATH, 90);
-
-      if (signErr) throw signErr;
+        .createSignedUrl(PRIVATE_FILE_PATH, 120);
+      if (signErr) { loginMsg.textContent = "Accès au contenu impossible."; return; }
 
       const res = await fetch(signed.signedUrl, { cache: "no-store" });
       const html = await res.text();
       secretContent.innerHTML = html;
+      stepLogin.style.display = "none";
       secret.style.display = "block";
-    } catch (e2) {
-      console.error("[Storage] signed url error:", e2);
-      secretContent.textContent = "Impossible de charger le contenu sécurisé.";
-      secret.style.display = "block";
+    } catch (err) {
+      loginMsg.textContent = "Erreur inattendue.";
+      console.error(err);
     }
   });
+
+  // Mot de passe oublié
+  resetBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = (emailEl.value || "").trim();
+    if (!email) { loginMsg.textContent = "Indiquez votre e-mail puis cliquez à nouveau."; return; }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://salaktum-coder.github.io/CLIENTS/" // URL autorisée dans Auth → URL Configuration
+      });
+      loginMsg.textContent = error ? ("Impossible d’envoyer l’e-mail : " + error.message)
+                                   : "E-mail de réinitialisation envoyé (vérifiez vos spams).";
+    } catch (err) {
+      loginMsg.textContent = "Erreur inattendue.";
+    }
+  });
+
+  // Si l'utilisateur revient avec une session active → charge directement
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: signed } = await supabase.storage.from(STORAGE_BUCKET)
+        .createSignedUrl(PRIVATE_FILE_PATH, 120);
+      if (signed?.signedUrl) {
+        const res = await fetch(signed.signedUrl, { cache: "no-store" });
+        secretContent.innerHTML = await res.text();
+        stepLogin.style.display = "none";
+        secret.style.display = "block";
+      }
+    }
+  })();
+</script>
+
 </script>
 
 </body>
