@@ -288,16 +288,17 @@ Logiciel CAO en interne: ${data.logicielCao}`
       status.textContent = 'Ouverture de votre messagerie…';
     });
   </script>
-  <section id="secure-access" style="max-width:520px;margin:24px auto;font-family:system-ui">
+  <!-- === Espace client sécurisé (correctif) === -->
+<section id="secure-access" style="max-width:520px;margin:24px auto;font-family:system-ui">
   <h2>Espace client sécurisé</h2>
   <div id="step-email">
-    <input type="email" id="email" placeholder="votre@email.com" style="width:100%;padding:10px">
-    <button id="sendCodeBtn" style="padding:10px;margin-top:8px">Recevoir le code</button>
+    <input type="email" id="loginEmail" placeholder="votre@email.com" style="width:100%;padding:10px">
+    <button id="sendCodeBtn" type="button" style="padding:10px;margin-top:8px">Recevoir le code</button>
     <p id="emailMsg" style="color:#666"></p>
   </div>
   <div id="step-otp" style="display:none">
     <input id="otp" placeholder="Code à 6 chiffres" style="width:100%;padding:10px">
-    <button id="verifyBtn" style="padding:10px;margin-top:8px">Valider</button>
+    <button id="verifyBtn" type="button" style="padding:10px;margin-top:8px">Valider</button>
     <p id="otpMsg" style="color:#666"></p>
   </div>
   <div id="secret" style="display:none;margin-top:16px;border:1px solid #ddd;padding:16px;border-radius:12px">
@@ -306,17 +307,19 @@ Logiciel CAO en interne: ${data.logicielCao}`
   </div>
 </section>
 
+<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";     // Settings → API → Project URL
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";           // Settings → API → anon public key
-  const STORAGE_BUCKET = "prive";
-  const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
+  // ⚠️ REMPLACE ces 2 valeurs par celles de Supabase → Settings → API
+  const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-  const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // ✅ bonne initialisation (CDN v2)
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Sélecteurs (note: on utilise loginEmail pour éviter le conflit avec l’autre input#email)
   const stepEmail = document.getElementById('step-email');
-  const emailInput = document.getElementById('email');
+  const loginEmail = document.getElementById('loginEmail');
   const sendCodeBtn = document.getElementById('sendCodeBtn');
   const emailMsg = document.getElementById('emailMsg');
 
@@ -328,35 +331,51 @@ Logiciel CAO en interne: ${data.logicielCao}`
   const secret = document.getElementById('secret');
   const secretContent = document.getElementById('secretContent');
 
+  const STORAGE_BUCKET = "prive";
+  const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html";
+
   let currentEmail = null;
 
-  sendCodeBtn.addEventListener('click', async () => {
-    const email = (emailInput.value || "").trim();
+  // 1) Envoi OTP
+  sendCodeBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = (loginEmail.value || "").trim();
     if (!email) { emailMsg.textContent = "Entrez un e-mail valide."; return; }
-    emailMsg.textContent = "Envoi du code...";
+    emailMsg.textContent = "Envoi du code…";
     currentEmail = email;
+    console.log("[OTP] sending to", email);
 
     const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) { emailMsg.textContent = "Erreur : " + error.message; return; }
-
+    if (error) {
+      console.error("[OTP] error:", error);
+      emailMsg.textContent = "Erreur : " + error.message;
+      return;
+    }
     emailMsg.textContent = "Code envoyé. Vérifiez votre boîte mail.";
     stepEmail.style.display = "none";
     stepOtp.style.display = "block";
   });
 
-  verifyBtn.addEventListener('click', async () => {
+  // 2) Vérification OTP
+  verifyBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
     const otp = (otpInput.value || "").trim();
     if (!otp) { otpMsg.textContent = "Entrez le code reçu."; return; }
-    otpMsg.textContent = "Vérification...";
+    otpMsg.textContent = "Vérification…";
 
     const { error } = await supabase.auth.verifyOtp({
       email: currentEmail, token: otp, type: 'email'
     });
-    if (error) { otpMsg.textContent = "Code invalide ou expiré."; return; }
+    if (error) {
+      console.error("[OTP] verify error:", error);
+      otpMsg.textContent = "Code invalide ou expiré.";
+      return;
+    }
 
-    otpMsg.textContent = "Connecté ! Chargement du contenu...";
+    otpMsg.textContent = "Connecté ! Chargement du contenu…";
     stepOtp.style.display = "none";
 
+    // 3) Lien signé et affichage du HTML privé
     try {
       const { data: signed, error: signErr } = await supabase
         .storage.from(STORAGE_BUCKET)
@@ -368,7 +387,8 @@ Logiciel CAO en interne: ${data.logicielCao}`
       const html = await res.text();
       secretContent.innerHTML = html;
       secret.style.display = "block";
-    } catch (e) {
+    } catch (e2) {
+      console.error("[Storage] signed url error:", e2);
       secretContent.textContent = "Impossible de charger le contenu sécurisé.";
       secret.style.display = "block";
     }
