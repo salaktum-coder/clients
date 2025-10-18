@@ -132,17 +132,23 @@
     });
 
     // Session déjà valide → affichage direct
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: signed } = await supabase.storage.from(STORAGE_BUCKET)
-          .createSignedUrl(PRIVATE_FILE_PATH, 120);
-        if (signed?.signedUrl) {
-          const res = await fetch(signed.signedUrl, { cache: "no-store" });
-          secretContent.innerHTML = await res.text();
-          secret.style.display = "block";
-          stepEmail.style.display = "none";
-          stepOtp.style.display = "none";
+// Durée de la signed URL (ex. 15 min)
+const EXPIRY_SECONDS = 900;
+
+const { data: signed, error: signErr } = await supabase
+  .storage.from(STORAGE_BUCKET)
+  .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
+
+if (signErr) {
+  msg.textContent = "Erreur Storage: " + (signErr.message || "voir console");
+  console.error(signErr);
+  return;
+}
+
+// 👉 plein écran, plus de problème de largeur
+window.location.href = signed.signedUrl;
+// (si tu préfères un nouvel onglet: window.open(signed.signedUrl, "_blank");)
+
         }
       }
     })();
