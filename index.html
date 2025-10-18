@@ -7,25 +7,24 @@
   <meta name="theme-color" content="#00f7ff">
   <style>
     :root{--bg:#0d0d0d;--card:#141414;--stroke:#2a2a2a;--txt:#e5e7eb;--muted:#9ca3af;--brand:#00f7ff}
-    *{box-sizing:border-box}html,body{height:100%;margin:0;font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif;background:#0d0d0d;color:var(--txt)}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif;background:#0d0d0d;color:var(--txt)}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
     .card{width:min(560px,92%);background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff22}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
     .dot{width:14px;height:14px;border-radius:4px;background:var(--brand);box-shadow:0 0 14px var(--brand)}
-    h1{margin:.25rem 0 1rem 0} p{color:var(--muted);margin:.25rem 0}
+    h1{margin:.25rem 0 1rem 0}
+    p{color:var(--muted);margin:.25rem 0}
     input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:var(--txt)}
     input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px #00f7ff40}
     .btn{width:100%;padding:12px;border-radius:12px;border:1px solid transparent;font-weight:700;cursor:pointer}
     .btn-primary{background:var(--brand);color:#031517;box-shadow:0 0 12px #00f7ff}
     #msg{color:var(--muted);min-height:1.2em;margin-top:6px}
-    #secret{display:none;margin-top:16px;border:1px solid var(--stroke);border-radius:12px;padding:16px;background:#0f1214}
-    #secret h3{margin:0 0 .6rem 0;color:var(--brand)}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="card">
-      <!-- En-tête corporate très court -->
       <div class="brand">
         <div class="dot"></div>
         <div style="font-weight:800;color:var(--brand);letter-spacing:.5px">GO2cam</div>
@@ -46,31 +45,23 @@
       </div>
 
       <p id="msg"></p>
-
-      <!-- Contenu privé (chargé après OTP) -->
-      <div id="secret">
-        <h3>Accès accordé</h3>
-        <div id="secretContent">Chargement…</div>
-      </div>
     </section>
   </main>
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ⚠️ REMPLACE ces 2 valeurs par celles de Supabase → Settings → API
-    const SUPABASE_URL = "https://jsmgnchubnkkfhyuadpx.supabase.co";
+    // ── CONFIG À AJUSTER ────────────────────────────────────────────────────────
+    const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-    // Fichier privé à afficher (dans Storage privé)
-    const STORAGE_BUCKET = "prive";
-    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026.html"; // adapte si besoin
+    const STORAGE_BUCKET     = "prive";                                 // ID exact du bucket
+    const PRIVATE_FILE_PATH  = "client/go2cam_maintenance_2026.html";   // sans "/" au début
+    const REDIRECT_URL       = "https://salaktum-coder.github.io/CLIENTS/";
+    const EXPIRY_SECONDS     = 900; // 15 minutes pour la signed URL
+    // ────────────────────────────────────────────────────────────────────────────
 
-    // URL autorisée dans Auth → URL Configuration
-    const REDIRECT_URL = "https://salaktum-coder.github.io/CLIENTS/";
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const stepEmail = document.getElementById('stepEmail');
     const stepOtp   = document.getElementById('stepOtp');
     const emailEl   = document.getElementById('email');
@@ -78,12 +69,25 @@
     const sendBtn   = document.getElementById('sendBtn');
     const verifyBtn = document.getElementById('verifyBtn');
     const msg       = document.getElementById('msg');
-    const secret    = document.getElementById('secret');
-    const secretContent = document.getElementById('secretContent');
 
     let currentEmail = null;
 
-    // 1) Envoi du code
+    // Helper: crée la signed URL et REDIRIGE plein écran
+    async function redirectToPrivateFile() {
+      const { data: signed, error: signErr } = await supabase
+        .storage.from(STORAGE_BUCKET)
+        .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
+
+      if (signErr) {
+        console.error("[Storage] createSignedUrl error:", signErr);
+        msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
+        return;
+      }
+      // Redirection plein écran (préféré à l'injection HTML)
+      window.location.href = signed.signedUrl;
+    }
+
+    // 1) Envoi du code OTP
     sendBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
@@ -99,7 +103,7 @@
 
       msg.textContent = "Code envoyé. Vérifiez votre boîte mail.";
       stepEmail.style.display = "none";
-      stepOtp.style.display = "flex";
+      stepOtp.style.display   = "flex";
       otpEl.focus();
     });
 
@@ -110,46 +114,20 @@
       if (!code) { msg.textContent = "Saisissez le code reçu."; return; }
       msg.textContent = "Vérification…";
 
-      const { error } = await supabase.auth.verifyOtp({ email: currentEmail, token: code, type: "email" });
+      const { error } = await supabase.auth.verifyOtp({
+        email: currentEmail, token: code, type: "email"
+      });
       if (error) { msg.textContent = "Code invalide ou expiré."; return; }
 
-      // 3) Charger la page privée via lien signé
-      try {
-        const { data: signed, error: signErr } = await supabase
-          .storage.from(STORAGE_BUCKET)
-          .createSignedUrl(PRIVATE_FILE_PATH, 120);
-        if (signErr) throw signErr;
-
-        const res = await fetch(signed.signedUrl, { cache: "no-store" });
-        const html = await res.text();
-        secretContent.innerHTML = html;
-        secret.style.display = "block";
-        stepOtp.style.display = "none";
-        msg.textContent = "";
-      } catch (e2) {
-        msg.textContent = "Impossible de charger le contenu sécurisé.";
-      }
+      msg.textContent = "Connexion réussie. Ouverture…";
+      await redirectToPrivateFile();
     });
 
-    // Session déjà valide → affichage direct
-// Durée de la signed URL (ex. 15 min)
-const EXPIRY_SECONDS = 900;
-
-const { data: signed, error: signErr } = await supabase
-  .storage.from(STORAGE_BUCKET)
-  .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
-
-if (signErr) {
-  msg.textContent = "Erreur Storage: " + (signErr.message || "voir console");
-  console.error(signErr);
-  return;
-}
-
-// 👉 plein écran, plus de problème de largeur
-window.location.href = signed.signedUrl;
-// (si tu préfères un nouvel onglet: window.open(signed.signedUrl, "_blank");)
-
-        }
+    // 3) Session déjà valide → redirection directe
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await redirectToPrivateFile();
       }
     })();
   </script>
