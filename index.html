@@ -168,5 +168,67 @@
     emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
     otpEl.addEventListener('keydown',   e => { if (e.key === 'Enter') verifyBtn.click(); });
   </script>
+  <script>
+async function redirectToPrivateFile() {
+  // 1) Essai direct avec le chemin déclaré
+  try {
+    const { data, error } = await supabase
+      .storage.from(STORAGE_BUCKET)
+      .createSignedUrl(PRIVATE_FILE_PATH, SIGNED_URL_TTL);
+
+    if (!error && data?.signedUrl) {
+      window.location.href = data.signedUrl;
+      return;
+    }
+
+    // 2) Si "not found" → on auto-découvre le VRAI nom dans le dossier "client/"
+    //    (Pratique si un caractère, une casse, ou un espace traîne quelque part)
+    const { data: items, error: listErr } = await supabase
+      .storage.from(STORAGE_BUCKET)
+      .list("client", { limit: 1000 });
+
+    if (listErr) {
+      console.error("[LIST error]", listErr);
+      msg.textContent = "Impossible de lister les fichiers (policy Storage ?).";
+      return;
+    }
+
+    // On cherche un .html plausible
+    const best = (items || []).find(f =>
+      f.name === "go2cam_maintenance_2026_v6.html"
+    ) || (items || []).find(f =>
+      /\.html?$/i.test(f.name)
+    );
+
+    if (!best) {
+      msg.innerHTML =
+        "Contenu introuvable (aucun .html trouvé dans <code>client/</code>).<br>" +
+        "Fichiers présents : " + (items || []).map(x => x.name).join(", ");
+      console.warn("[LIST]", items);
+      return;
+    }
+
+    // 3) On retente avec le nom découvert
+    const discoveredPath = "client/" + best.name;
+    console.log("[DISCOVERED]", discoveredPath);
+
+    const { data: signed2, error: err2 } = await supabase
+      .storage.from(STORAGE_BUCKET)
+      .createSignedUrl(discoveredPath, SIGNED_URL_TTL);
+
+    if (err2) {
+      console.error("[createSignedUrl discovered error]", err2);
+      msg.textContent = "Toujours introuvable. Vérifie le chemin exact & la casse.";
+      return;
+    }
+
+    window.location.href = signed2.signedUrl;
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Erreur inattendue (voir console).";
+  }
+}
+</script>
+
 </body>
 </html>
