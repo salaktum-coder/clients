@@ -89,7 +89,7 @@
       if (signErr) {
         const m = (signErr.message || "").toLowerCase();
         if (m.includes("permission")) {
-          // ✅ Message demandé quand l’e-mail n’est pas sur la liste blanche
+          // Message clair si l’e-mail n’est pas dans la table allowed_emails (policy Storage)
           msg.textContent = "Adresse e-mail non autorisée. Utilisez l’adresse e-mail à laquelle nous vous avons envoyé notre message.";
         } else if (m.includes("object not found")) {
           msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier dans Storage).";
@@ -112,8 +112,8 @@
       setLoading(sendBtn, true);
       currentEmail = email;
 
-      // On ne parle jamais “d’inscription” côté UI.
-      // shouldCreateUser:true = OK, l’utilisateur reçoit le code et on filtre ensuite par policy Storage.
+      // On ne parle jamais d’“inscription” côté UI.
+      // shouldCreateUser:true = OK : l’utilisateur reçoit un code, puis l’accès est contrôlé par la policy Storage.
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
@@ -158,7 +158,7 @@
       await redirectToPrivateFile();
     });
 
-    // 3) Si une session est déjà active → accès direct
+    // 3) Session déjà active → accès direct
     (async () => {
       const { data:{ session } } = await supabase.auth.getSession();
       if (session) await redirectToPrivateFile();
