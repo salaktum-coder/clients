@@ -20,7 +20,7 @@
     .btn{width:100%;padding:12px;border-radius:12px;border:1px solid transparent;font-weight:700;cursor:pointer}
     .btn[disabled]{opacity:.6;cursor:not-allowed}
     .btn-primary{background:var(--brand);color:#031517;box-shadow:0 0 12px #00f7ff}
-    #msg{color:var(--muted);min-height:1.2em;margin-top:8px}
+    #msg{color:var(--muted);min-height:1.4em;margin-top:8px}
     .row{display:flex;flex-direction:column;gap:.6rem;margin-top:12px}
   </style>
 </head>
@@ -58,7 +58,7 @@
     // === CONFIG À ADAPTER ===
     const SUPABASE_URL       = "https://jsmgnchubnkkfhyuadpx.supabase.co";
     const SUPABASE_ANON_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
-    const STORAGE_BUCKET     = "prive";                         // ID exact du bucket
+    const STORAGE_BUCKET     = "prive";  // ID exact du bucket
     const PRIVATE_FILE_PATH  = "client/go2cam_maintenance_2026_v6.html"; // chemin exact dans le bucket
     const REDIRECT_URL       = "https://salaktum-coder.github.io/CLIENTS/";
     const SIGNED_URL_TTL     = 900; // 15 minutes
@@ -75,12 +75,11 @@
 
     let currentEmail = null;
 
-    function setLoading(el, isLoading) {
+    function setLoading(el, isLoading, textWhenLoading="Patientez…") {
+      if (!el.dataset.label) el.dataset.label = el.textContent;
       el.disabled = !!isLoading;
-      el.textContent = isLoading ? "Patientez…" : el.dataset.label || el.textContent;
+      el.textContent = isLoading ? textWhenLoading : el.dataset.label;
     }
-    sendBtn.dataset.label   = sendBtn.textContent;
-    verifyBtn.dataset.label = verifyBtn.textContent;
 
     async function redirectToPrivateFile() {
       const { data: signed, error: signErr } = await supabase
@@ -90,9 +89,10 @@
       if (signErr) {
         const m = (signErr.message || "").toLowerCase();
         if (m.includes("permission")) {
-          msg.textContent = "Accès non autorisé pour cette adresse e-mail.";
+          // ✅ Message demandé quand l’e-mail n’est pas sur la liste blanche
+          msg.textContent = "Adresse e-mail non autorisée. Utilisez l’adresse e-mail à laquelle nous vous avons envoyé notre message.";
         } else if (m.includes("object not found")) {
-          msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier).";
+          msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier dans Storage).";
         } else {
           msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
         }
@@ -102,7 +102,7 @@
       window.location.href = signed.signedUrl;
     }
 
-    // 1) Envoyer le code OTP
+    // 1) Envoi du code OTP
     sendBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
@@ -112,7 +112,8 @@
       setLoading(sendBtn, true);
       currentEmail = email;
 
-      // shouldCreateUser:true ne s’affiche jamais à l’utilisateur ; on reste “mail + code”
+      // On ne parle jamais “d’inscription” côté UI.
+      // shouldCreateUser:true = OK, l’utilisateur reçoit le code et on filtre ensuite par policy Storage.
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
@@ -131,7 +132,7 @@
       otpEl.focus();
     });
 
-    // 2) Vérifier le code
+    // 2) Vérification du code
     verifyBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const code = (otpEl.value || "").trim();
@@ -149,7 +150,7 @@
       setLoading(verifyBtn, false);
 
       if (error) {
-        msg.textContent = "Code invalide ou expiré.";
+        msg.textContent = "Code invalide ou expiré. Demandez un nouveau code.";
         return;
       }
 
@@ -160,10 +161,12 @@
     // 3) Si une session est déjà active → accès direct
     (async () => {
       const { data:{ session } } = await supabase.auth.getSession();
-      if (session) {
-        await redirectToPrivateFile();
-      }
+      if (session) await redirectToPrivateFile();
     })();
+
+    // Entrée clavier (Enter)
+    emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    otpEl.addEventListener('keydown',   e => { if (e.key === 'Enter') verifyBtn.click(); });
   </script>
 </body>
 </html>
