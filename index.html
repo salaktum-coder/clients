@@ -18,8 +18,10 @@
     input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:var(--txt)}
     input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px #00f7ff40}
     .btn{width:100%;padding:12px;border-radius:12px;border:1px solid transparent;font-weight:700;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
     .btn-primary{background:var(--brand);color:#031517;box-shadow:0 0 12px #00f7ff}
-    #msg{color:var(--muted);min-height:1.2em;margin-top:6px}
+    #msg{color:var(--muted);min-height:1.2em;margin-top:8px}
+    .row{display:flex;flex-direction:column;gap:.6rem;margin-top:12px}
   </style>
 </head>
 <body>
@@ -30,13 +32,20 @@
         <div style="font-weight:800;color:var(--brand);letter-spacing:.5px">GO2cam</div>
       </div>
       <h1>Accès sécurisé</h1>
-      <p>Espace réservé. Connectez-vous avec l’adresse e-mail autorisée et votre mot de passe.</p>
+      <p>Entrez votre e-mail pour recevoir un code à 6 chiffres.</p>
 
-      <!-- Login: email + mot de passe -->
-      <div id="stepPwd" style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="pwdEmail" type="email" placeholder="Adresse e-mail">
-        <input id="pwdPass"  type="password" placeholder="Mot de passe">
-        <button id="pwdLogin" class="btn btn-primary">Se connecter</button>
+      <!-- Étape e-mail -->
+      <div id="stepEmail" class="row">
+        <input id="email" type="email" placeholder="Adresse e-mail" autocomplete="email" />
+        <button id="sendBtn" class="btn btn-primary">Recevoir le code</button>
+      </div>
+
+      <!-- Étape code -->
+      <div id="stepOtp" class="row" style="display:none">
+        <input id="otp" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="Code à 6 chiffres"
+               style="letter-spacing:4px;text-align:center;font-weight:700" />
+        <button id="verifyBtn" class="btn btn-primary">Valider le code</button>
       </div>
 
       <p id="msg"></p>
@@ -46,75 +55,115 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ── CONFIG ────────────────────────────────────────────────────────────────
-    const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
-
-    const STORAGE_BUCKET    = "prive";                                  // ID exact du bucket
-    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html";  // SANS "/" au début
-    const EXPIRY_SECONDS    = 900; // 15 min
-    // ─────────────────────────────────────────────────────────────────────────
+    // === CONFIG À ADAPTER ===
+    const SUPABASE_URL       = "https://jsmgnchubnkkfhyuadpx.supabase.co";
+    const SUPABASE_ANON_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
+    const STORAGE_BUCKET     = "prive";                         // ID exact du bucket
+    const PRIVATE_FILE_PATH  = "client/go2cam_maintenance_2026_v6.html"; // chemin exact dans le bucket
+    const REDIRECT_URL       = "https://salaktum-coder.github.io/CLIENTS/";
+    const SIGNED_URL_TTL     = 900; // 15 minutes
+    // ========================
 
     const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const emailEl   = document.getElementById('pwdEmail');
-    const passEl    = document.getElementById('pwdPass');
-    const loginBtn  = document.getElementById('pwdLogin');
+    const stepEmail = document.getElementById('stepEmail');
+    const stepOtp   = document.getElementById('stepOtp');
+    const emailEl   = document.getElementById('email');
+    const otpEl     = document.getElementById('otp');
+    const sendBtn   = document.getElementById('sendBtn');
+    const verifyBtn = document.getElementById('verifyBtn');
     const msg       = document.getElementById('msg');
 
-    // Ouvre la page privée (génère signed URL), puis déconnecte la session locale
-    async function openPrivateAndSignOut() {
-      // 1) Crée l’URL signée (nécessite la session active)
+    let currentEmail = null;
+
+    function setLoading(el, isLoading) {
+      el.disabled = !!isLoading;
+      el.textContent = isLoading ? "Patientez…" : el.dataset.label || el.textContent;
+    }
+    sendBtn.dataset.label   = sendBtn.textContent;
+    verifyBtn.dataset.label = verifyBtn.textContent;
+
+    async function redirectToPrivateFile() {
       const { data: signed, error: signErr } = await supabase
         .storage.from(STORAGE_BUCKET)
-        .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
+        .createSignedUrl(PRIVATE_FILE_PATH, SIGNED_URL_TTL);
 
       if (signErr) {
-        console.error("[Storage] createSignedUrl error:", signErr, { bucket: STORAGE_BUCKET, path: PRIVATE_FILE_PATH });
-        msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
+        const m = (signErr.message || "").toLowerCase();
+        if (m.includes("permission")) {
+          msg.textContent = "Accès non autorisé pour cette adresse e-mail.";
+        } else if (m.includes("object not found")) {
+          msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier).";
+        } else {
+          msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
+        }
+        return;
+      }
+      // Redirection plein écran vers le contenu privé
+      window.location.href = signed.signedUrl;
+    }
+
+    // 1) Envoyer le code OTP
+    sendBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = (emailEl.value || "").trim();
+      if (!email) { msg.textContent = "Saisissez une adresse e-mail valide."; return; }
+
+      msg.textContent = "Envoi du code…";
+      setLoading(sendBtn, true);
+      currentEmail = email;
+
+      // shouldCreateUser:true ne s’affiche jamais à l’utilisateur ; on reste “mail + code”
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
+      });
+
+      setLoading(sendBtn, false);
+
+      if (error) {
+        msg.textContent = "Impossible d'envoyer le code : " + error.message;
         return;
       }
 
-      // 2) Déconnecte tout de suite la session locale pour forcer la reconnexion à la prochaine visite
-      await supabase.auth.signOut().catch(()=>{});
-
-      // 3) Essaie une redirection plein écran ; si le MIME est mauvais, fallback en écriture
-      try {
-        const headRes = await fetch(signed.signedUrl, { method: "HEAD", cache: "no-store" });
-        const ct = (headRes.headers.get("content-type") || "").toLowerCase();
-        if (ct.includes("text/html")) {
-          window.location.href = signed.signedUrl; // plein écran
-          return;
-        }
-      } catch (_) {}
-
-      // Fallback robuste (affiche même si Content-Type est mauvais)
-      try {
-        const res  = await fetch(signed.signedUrl, { cache: "no-store" });
-        const html = await res.text();
-        document.open(); document.write(html); document.close();
-      } catch (e) {
-        console.error("Render fallback error:", e);
-        msg.textContent = "Impossible d'afficher le contenu sécurisé.";
-      }
-    }
-
-    // Login mot de passe
-    loginBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const email = (emailEl.value || "").trim();
-      const password = (passEl.value || "");
-      if (!email || !password) { msg.textContent = "Entrez votre e-mail et votre mot de passe."; return; }
-
-      msg.textContent = "Connexion…";
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { msg.textContent = "Échec de connexion : " + error.message; return; }
-
-      msg.textContent = "Connexion réussie. Ouverture…";
-      await openPrivateAndSignOut(); // génère l'accès puis supprime la session locale
+      msg.textContent = "Code envoyé. Vérifiez votre boîte mail (pensez aux spams).";
+      stepEmail.style.display = "none";
+      stepOtp.style.display   = "flex";
+      otpEl.focus();
     });
 
-    // Si une session traîne (cas rare), on NE l'utilise PAS : on force la saisie à chaque fois.
-    // => Pas d'auto-login ici. (Si tu veux autoriser la reconnexion auto plus tard, on réactivera getSession()).
+    // 2) Vérifier le code
+    verifyBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const code = (otpEl.value || "").trim();
+      if (!code) { msg.textContent = "Saisissez le code reçu par e-mail."; return; }
+
+      msg.textContent = "Vérification du code…";
+      setLoading(verifyBtn, true);
+
+      const { error } = await supabase.auth.verifyOtp({
+        email: currentEmail,
+        token: code,
+        type: "email"
+      });
+
+      setLoading(verifyBtn, false);
+
+      if (error) {
+        msg.textContent = "Code invalide ou expiré.";
+        return;
+      }
+
+      msg.textContent = "Connexion validée. Ouverture…";
+      await redirectToPrivateFile();
+    });
+
+    // 3) Si une session est déjà active → accès direct
+    (async () => {
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (session) {
+        await redirectToPrivateFile();
+      }
+    })();
   </script>
 </body>
 </html>
