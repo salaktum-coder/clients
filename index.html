@@ -53,20 +53,21 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ── CONFIG À ADAPTER ───────────────────────────────────────────────
-    const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";   // ← remplace par le tien
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E"; // ← remplace par le tien
+    // === CONFIG À ADAPTER ===============================================
+    const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-    // Chemin du fichier privé à afficher (dans Storage)
+    // Fichier HTML privé à ouvrir
     const STORAGE_BUCKET    = "prive";
     const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html";
-    const EXPIRY_SECONDS    = 900; // 15 minutes
+    const EXPIRY_SECONDS    = 900;  // 15 min
     // URL autorisée dans Auth → URL Configuration (pour l’OTP)
     const REDIRECT_URL      = "https://salaktum-coder.github.io/clients/";
-    // ───────────────────────────────────────────────────────────────────
+    // ===============================================================
 
-    const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true } // on persiste, mais on se déconnectera à la fermeture (voir plus bas)
+    // ⚠️ persistSession:false = la session ne survit pas à la fermeture d’onglet
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false }
     });
 
     const stepEmail = document.getElementById('stepEmail');
@@ -79,40 +80,35 @@
 
     let currentEmail = null;
 
-    // Ouvre le HTML privé via un Blob (garanti affichage comme page)
+    // Ouvre le HTML privé via un Blob (garanti affichage correct)
     async function openPrivateHtmlAsPage(bucket, path, expiresSec = 900) {
-      // 1) Signed URL (sans 'download')
       const { data: signed, error: signErr } = await supabase
         .storage.from(bucket)
         .createSignedUrl(path, expiresSec, { download: false });
 
       if (signErr || !signed?.signedUrl) {
         const apiMsg = signErr?.message || "inconnue";
-        // Message clair si l'accès est refusé par la policy (email non autorisé)
         if (/401|403|permission|not allowed|Unauthorized/i.test(apiMsg)) {
-          throw new Error("Votre e-mail n’est pas autorisé pour cet accès. Utilisez l’adresse e-mail transmise par GO2cam.");
+          throw new Error("Votre e-mail n’est pas autorisé. Utilisez l’adresse transmise par GO2cam.");
         }
         throw new Error("Erreur Storage : " + apiMsg);
       }
 
-      // 2) Récupérer le fichier en évitant le cache
-      const urlNoCache = signed.signedUrl + `&nocache=${Date.now()}`;
-      const res = await fetch(urlNoCache, { cache: "no-store" });
+      const res = await fetch(signed.signedUrl + `&nocache=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          throw new Error("Votre e-mail n’est pas autorisé pour cet accès. Utilisez l’adresse e-mail transmise par GO2cam.");
+          throw new Error("Votre e-mail n’est pas autorisé. Utilisez l’adresse transmise par GO2cam.");
         }
         throw new Error("Impossible de charger le contenu sécurisé (HTTP " + res.status + ").");
       }
 
-      // 3) Recréer un blob HTML et l’ouvrir
       const buf  = await res.arrayBuffer();
       const blob = new Blob([buf], { type: "text/html;charset=utf-8" });
       const obj  = URL.createObjectURL(blob);
-      window.location.href = obj; // plein écran
+      window.location.href = obj;
     }
 
-    // Envoi OTP
+    // 1) Envoi du code OTP par e-mail
     sendBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
@@ -120,15 +116,11 @@
       msg.textContent = "Envoi du code…";
       currentEmail = email;
 
-      // Important : shouldCreateUser true = pas besoin d'ajouter l'utilisateur à la main.
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
       });
-      if (error) {
-        msg.textContent = "Erreur d’envoi : " + (error.message || "inconnue");
-        return;
-      }
+      if (error) { msg.textContent = "Erreur d’envoi : " + (error.message || "inconnue"); return; }
 
       msg.textContent = "Code envoyé. Vérifiez votre boîte mail (et spams).";
       stepEmail.style.display = "none";
@@ -136,7 +128,7 @@
       otpEl.focus();
     });
 
-    // Vérification OTP
+    // 2) Vérification du code
     verifyBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const code = (otpEl.value || "").trim();
@@ -148,11 +140,7 @@
         token: code,
         type: "email"
       });
-
-      if (error) {
-        msg.textContent = "Erreur de vérification. Réessayez.";
-        return;
-      }
+      if (error) { msg.textContent = "Code invalide/expiré. Réessayez."; return; }
 
       msg.textContent = "Connexion réussie. Ouverture…";
       try {
@@ -162,7 +150,7 @@
       }
     });
 
-    // Si l’utilisateur a déjà une session, on tente directement l’ouverture
+    // (Optionnel) Si une session est encore en mémoire (reload), on tente l’ouverture directe
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -170,18 +158,12 @@
           msg.textContent = "Session active détectée. Ouverture…";
           await openPrivateHtmlAsPage(STORAGE_BUCKET, PRIVATE_FILE_PATH, EXPIRY_SECONDS);
         } catch (e) {
-          // Si la policy bloque désormais, afficher le message et réafficher l’étape OTP
           msg.textContent = e.message || "Accès refusé.";
           stepEmail.style.display = "flex";
           stepOtp.style.display   = "none";
         }
       }
     })();
-
-    // Déconnexion à la fermeture pour forcer une reconnexion à chaque visite
-    // (selon navigateur, l’événement peut ne pas toujours se déclencher)
-    window.addEventListener("pagehide", () => { supabase.auth.signOut().catch(()=>{}); });
-    window.addEventListener("beforeunload", () => { supabase.auth.signOut().catch(()=>{}); });
   </script>
 </body>
 </html>
