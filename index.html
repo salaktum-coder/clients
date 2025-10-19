@@ -92,12 +92,54 @@
     }
 
     // Envoi du code (avec whiteliste côté SQL)
-    sendBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const email = (emailEl.value || "").trim();
-      if (!email.includes('@')) { msg.textContent = "Saisissez un e-mail valide."; return; }
-      msg.textContent = "Vérification de l’adresse…";
-      sendBtn.disabled = true;
+   sendBtn.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = (emailEl.value || "").trim();
+  msg.textContent = "";
+  if (!email) { msg.textContent = "Entrez un e-mail valide."; return; }
+
+  sendBtn.disabled = true;
+  msg.textContent = "Vérification de l'adresse…";
+
+  // 1) Vérifie si l'adresse est autorisée
+  const { data: isAllowed, error: allowErr } = await supabase.rpc('is_email_allowed', { p_email: email });
+  if (allowErr) {
+    console.error('RPC is_email_allowed error:', allowErr);
+    msg.textContent = "Erreur de vérification (RPC). Vérifie la fonction/droits.";
+    sendBtn.disabled = false;
+    return;
+  }
+  if (!isAllowed) {
+    msg.textContent = "Adresse non autorisée. Utilisez l’adresse à laquelle nous vous avons écrit.";
+    sendBtn.disabled = false;
+    return;
+  }
+
+  // 2) Envoi OTP
+  msg.textContent = "Envoi du code…";
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: REDIRECT_URL, // <- EXACTEMENT ton URL GitHub Pages
+    },
+  });
+
+  if (error) {
+    console.error('signInWithOtp error:', error);
+    // on affiche le vrai message renvoyé par Supabase
+    msg.textContent = "Erreur envoi code : " + (error.message || "inconnue");
+    sendBtn.disabled = false;
+    return;
+  }
+
+  currentEmail = email;
+  msg.textContent = "Code envoyé. Vérifiez votre boîte mail.";
+  stepEmail.style.display = "none";
+  stepOtp.style.display = "flex";
+  otpEl.focus();
+});
+
 
       // 1) Vérifie l’adresse autorisée
       const { data: isAllowed, error: allowErr } = await supabase.rpc('is_email_allowed', { p_email: email });
