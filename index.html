@@ -30,18 +30,13 @@
         <div style="font-weight:800;color:var(--brand);letter-spacing:.5px">GO2cam</div>
       </div>
       <h1>Accès sécurisé</h1>
-      <p>Portail d’entrée réservé aux clients. Saisissez votre e-mail pour recevoir un code d’accès.</p>
+      <p>Espace réservé. Connectez-vous avec l’adresse e-mail autorisée et votre mot de passe.</p>
 
-      <!-- Étape e-mail -->
-      <div id="stepEmail" style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="email" type="email" placeholder="Adresse e-mail">
-        <button id="sendBtn" class="btn btn-primary">Recevoir le code</button>
-      </div>
-
-      <!-- Étape code -->
-      <div id="stepOtp" style="display:none;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Code à 6 chiffres" style="letter-spacing:4px;text-align:center;font-weight:700">
-        <button id="verifyBtn" class="btn btn-primary">Valider</button>
+      <!-- Login: email + mot de passe -->
+      <div id="stepPwd" style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
+        <input id="pwdEmail" type="email" placeholder="Adresse e-mail">
+        <input id="pwdPass"  type="password" placeholder="Mot de passe">
+        <button id="pwdLogin" class="btn btn-primary">Se connecter</button>
       </div>
 
       <p id="msg"></p>
@@ -55,123 +50,71 @@
     const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-    const STORAGE_BUCKET     = "prive"; // ID exact du bucket
-    const PRIVATE_FILE_PATH  = "client/go2cam_maintenance_2026_v6.html"; // SANS "/" au début
-    const REDIRECT_URL       = "https://salaktum-coder.github.io/CLIENTS/";
-    const EXPIRY_SECONDS     = 900; // 15 minutes
+    const STORAGE_BUCKET    = "prive";                                  // ID exact du bucket
+    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html";  // SANS "/" au début
+    const EXPIRY_SECONDS    = 900; // 15 min
     // ─────────────────────────────────────────────────────────────────────────
 
     const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const stepEmail = document.getElementById('stepEmail');
-    const stepOtp   = document.getElementById('stepOtp');
-    const emailEl   = document.getElementById('email');
-    const otpEl     = document.getElementById('otp');
-    const sendBtn   = document.getElementById('sendBtn');
-    const verifyBtn = document.getElementById('verifyBtn');
+    const emailEl   = document.getElementById('pwdEmail');
+    const passEl    = document.getElementById('pwdPass');
+    const loginBtn  = document.getElementById('pwdLogin');
     const msg       = document.getElementById('msg');
 
-    let currentEmail = null;
+    // Ouvre la page privée (génère signed URL), puis déconnecte la session locale
+    async function openPrivateAndSignOut() {
+      // 1) Crée l’URL signée (nécessite la session active)
+      const { data: signed, error: signErr } = await supabase
+        .storage.from(STORAGE_BUCKET)
+        .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
 
-    // === Fonction centrale : ouvre la page privée en "plein écran"
-    //    - crée l’URL signée
-    //    - si "Object not found", auto-détecte un .html dans /client
-    //    - charge le HTML et remplace la page (marche même si le MIME est mauvais)
-    async function openPrivateHtml() {
-      async function signedUrlFor(path) {
-        return await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, EXPIRY_SECONDS);
-      }
-
-      let path = (PRIVATE_FILE_PATH || "").trim();
-      let { data: signed, error: signErr } = await signedUrlFor(path);
-
-      if (signErr && /object not found/i.test(signErr.message || "")) {
-        console.warn("[Storage] Object not found pour", path, "→ auto-détection dans client/…");
-
-        const { data: list, error: listErr } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .list("client", { limit: 100 });
-
-        if (listErr) {
-          console.error("[Storage] list('client') error:", listErr);
-          msg.textContent = "Erreur Storage (list) : " + (listErr.message || "voir console");
-          return;
-        }
-
-        // on cherche d’abord le v6, sinon le premier .html
-        const candidate = (list || []).find(f => f.name === "go2cam_maintenance_2026_v6.html")
-                       || (list || []).find(f => /\.html?$/i.test(f.name));
-
-        if (!candidate) {
-          msg.textContent = "Aucun fichier .html trouvé dans client/";
-          return;
-        }
-
-        path = "client/" + candidate.name;
-        ({ data: signed, error: signErr } = await signedUrlFor(path));
-        if (signErr) {
-          console.error("[Storage] createSignedUrl error (après autodetect):", signErr);
-          msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
-          return;
-        }
-      } else if (signErr) {
-        console.error("[Storage] createSignedUrl error:", signErr, { bucket: STORAGE_BUCKET, path });
+      if (signErr) {
+        console.error("[Storage] createSignedUrl error:", signErr, { bucket: STORAGE_BUCKET, path: PRIVATE_FILE_PATH });
         msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
         return;
       }
 
+      // 2) Déconnecte tout de suite la session locale pour forcer la reconnexion à la prochaine visite
+      await supabase.auth.signOut().catch(()=>{});
+
+      // 3) Essaie une redirection plein écran ; si le MIME est mauvais, fallback en écriture
+      try {
+        const headRes = await fetch(signed.signedUrl, { method: "HEAD", cache: "no-store" });
+        const ct = (headRes.headers.get("content-type") || "").toLowerCase();
+        if (ct.includes("text/html")) {
+          window.location.href = signed.signedUrl; // plein écran
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback robuste (affiche même si Content-Type est mauvais)
       try {
         const res  = await fetch(signed.signedUrl, { cache: "no-store" });
         const html = await res.text();
         document.open(); document.write(html); document.close();
       } catch (e) {
-        console.error("Render error:", e);
+        console.error("Render fallback error:", e);
         msg.textContent = "Impossible d'afficher le contenu sécurisé.";
       }
     }
 
-    // 1) Envoi du code OTP
-    sendBtn.addEventListener('click', async (e) => {
+    // Login mot de passe
+    loginBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
-      if (!email) { msg.textContent = "Entrez un e-mail valide."; return; }
-      msg.textContent = "Envoi du code…";
-      currentEmail = email;
+      const password = (passEl.value || "");
+      if (!email || !password) { msg.textContent = "Entrez votre e-mail et votre mot de passe."; return; }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
-      });
-      if (error) { msg.textContent = "Erreur : " + error.message; return; }
-
-      msg.textContent = "Code envoyé. Vérifiez votre boîte mail.";
-      stepEmail.style.display = "none";
-      stepOtp.style.display   = "flex";
-      otpEl.focus();
-    });
-
-    // 2) Vérification du code
-    verifyBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const code = (otpEl.value || "").trim();
-      if (!code) { msg.textContent = "Saisissez le code reçu."; return; }
-      msg.textContent = "Vérification…";
-
-      const { error } = await supabase.auth.verifyOtp({
-        email: currentEmail, token: code, type: "email"
-      });
-      if (error) { msg.textContent = "Code invalide ou expiré."; return; }
+      msg.textContent = "Connexion…";
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { msg.textContent = "Échec de connexion : " + error.message; return; }
 
       msg.textContent = "Connexion réussie. Ouverture…";
-      await openPrivateHtml();
+      await openPrivateAndSignOut(); // génère l'accès puis supprime la session locale
     });
 
-    // 3) Session déjà valide → ouverture directe
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await openPrivateHtml();
-      }
-    })();
+    // Si une session traîne (cas rare), on NE l'utilise PAS : on force la saisie à chaque fois.
+    // => Pas d'auto-login ici. (Si tu veux autoriser la reconnexion auto plus tard, on réactivera getSession()).
   </script>
 </body>
 </html>
