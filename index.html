@@ -89,7 +89,7 @@
         if (/401|403|permission|not allowed|Unauthorized/i.test(apiMsg)) {
           throw new Error("Accès refusé : votre e-mail n’est pas autorisé. Veuillez vous connecter avec l’adresse qui a reçu l’e-mail GO2cam.");
         }
-        throw new Error("Impossible d’ouvrir le contenu sécurisé.");
+        throw new Error("Accès refusé : cette adresse n’est pas autorisée. Connectez-vous avec l’adresse qui a reçu l’e-mail GO2cam.");
       }
 
       const res = await fetch(signed.signedUrl + `&nocache=${Date.now()}`, { cache: "no-store" });
@@ -150,7 +150,7 @@
         await openPrivateHtmlAsPage(STORAGE_BUCKET, PRIVATE_FILE_PATH, EXPIRY_SECONDS);
       } catch (e2) {
         // 👉 Message PRO si l’e-mail n’est pas autorisé
-        msg.textContent = e2.message || "Accès refusé : utilisez l’adresse e-mail qui a reçu l’e-mail GO2cam.";
+        msg.textContent = e2.message || "Accès refusé : cette adresse n’est pas autorisée. Connectez-vous avec l’adresse qui a reçu l’e-mail GO2cam.";
       }
     });
 
