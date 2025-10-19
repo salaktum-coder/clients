@@ -53,21 +53,18 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ── CONFIG (adapter si besoin) ─────────────────────────────────────
+    // ====== CONFIG À AJUSTER SI BESOIN ======
     const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-    // Chemin du fichier privé à afficher (dans Storage)
     const STORAGE_BUCKET    = "prive";
-    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html";
+    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html"; // chemin exact dans Storage
     const EXPIRY_SECONDS    = 900; // 15 minutes
-
-    // URL autorisée dans Auth → URL Configuration (pour l’OTP)
     const REDIRECT_URL      = "https://salaktum-coder.github.io/clients/";
-    // ───────────────────────────────────────────────────────────────────
+    // ========================================
 
-    // Session NON persistée pour éviter la reconnexion auto après fermeture
-    const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Session NON persistée → évite la reconnexion automatique après fermeture du navigateur
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false }
     });
 
@@ -81,7 +78,7 @@
 
     let currentEmail = null;
 
-    // Ouvre le HTML privé via un Blob (affichage plein écran)
+    // Ouvre le HTML privé via URL signée (avec un message clair si non autorisé)
     async function openPrivateHtmlAsPage(bucket, path, expiresSec = 900) {
       const { data: signed, error: signErr } = await supabase
         .storage.from(bucket)
@@ -90,27 +87,26 @@
       if (signErr || !signed?.signedUrl) {
         const apiMsg = signErr?.message || "inconnue";
         if (/401|403|permission|not allowed|Unauthorized/i.test(apiMsg)) {
-          throw new Error("Accès refusé : votre e-mail n’est pas autorisé. Utilisez l’adresse transmise par GO2cam.");
+          throw new Error("Accès refusé : votre e-mail n’est pas autorisé. Veuillez vous connecter avec l’adresse qui a reçu l’e-mail GO2cam.");
         }
-        throw new Error("Erreur Storage : " + apiMsg);
+        throw new Error("Impossible d’ouvrir le contenu sécurisé.");
       }
 
-      const urlNoCache = signed.signedUrl + `&nocache=${Date.now()}`;
-      const res = await fetch(urlNoCache, { cache: "no-store" });
+      const res = await fetch(signed.signedUrl + `&nocache=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          throw new Error("Accès refusé : votre e-mail n’est pas autorisé. Utilisez l’adresse transmise par GO2cam.");
+          throw new Error("Accès refusé : votre e-mail n’est pas autorisé. Veuillez utiliser l’adresse qui a reçu l’e-mail GO2cam.");
         }
         throw new Error("Impossible de charger le contenu sécurisé (HTTP " + res.status + ").");
       }
 
-      const buf  = await res.arrayBuffer();
-      const blob = new Blob([buf], { type: "text/html;charset=utf-8" });
-      const obj  = URL.createObjectURL(blob);
-      window.location.href = obj;
+      const html = await res.text();
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url  = URL.createObjectURL(blob);
+      window.location.href = url;
     }
 
-    // Envoi OTP
+    // 1) Envoi OTP
     sendBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
@@ -122,18 +118,15 @@
         email,
         options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
       });
-      if (error) {
-        msg.textContent = "Erreur d’envoi : " + (error.message || "inconnue");
-        return;
-      }
+      if (error) { msg.textContent = "Erreur d’envoi : " + (error.message || "inconnue"); return; }
 
-      msg.textContent = "Code envoyé. Vérifiez votre boîte mail (et spams).";
+      msg.textContent = "Code envoyé. Vérifiez votre boîte mail (et vos spams).";
       stepEmail.style.display = "none";
       stepOtp.style.display   = "flex";
       otpEl.focus();
     });
 
-    // Vérification OTP
+    // 2) Vérification OTP
     verifyBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const code = (otpEl.value || "").trim();
@@ -147,7 +140,8 @@
       });
 
       if (error) {
-        msg.textContent = "Erreur de vérification. Réessayez.";
+        // Message clair si le code est invalide/expiré
+        msg.textContent = "Code invalide ou expiré. Réessayez.";
         return;
       }
 
@@ -155,11 +149,12 @@
       try {
         await openPrivateHtmlAsPage(STORAGE_BUCKET, PRIVATE_FILE_PATH, EXPIRY_SECONDS);
       } catch (e2) {
-        msg.textContent = e2.message || "Impossible d’ouvrir le contenu sécurisé.";
+        // 👉 Message PRO si l’e-mail n’est pas autorisé
+        msg.textContent = e2.message || "Accès refusé : utilisez l’adresse e-mail qui a reçu l’e-mail GO2cam.";
       }
     });
 
-    // Si une session en mémoire existe déjà (ex. rafraîchissement), on tente l’ouverture
+    // 3) Si une session temporaire existe (rafraîchissement), on tente l’ouverture
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -174,7 +169,7 @@
       }
     })();
 
-    // Déconnexion à la fermeture/chargement d’une autre page (ceinture et bretelles)
+    // Déconnexion quand on quitte/ferme la page (pour éviter la reconnexion auto)
     window.addEventListener("pagehide", () => { supabase.auth.signOut().catch(()=>{}); });
     window.addEventListener("beforeunload", () => { supabase.auth.signOut().catch(()=>{}); });
   </script>
