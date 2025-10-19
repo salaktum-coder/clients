@@ -8,7 +8,7 @@
   <style>
     :root{--bg:#0d0d0d;--card:#141414;--stroke:#2a2a2a;--txt:#e5e7eb;--muted:#9ca3af;--brand:#00f7ff}
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0d0d0d;color:var(--txt)}
+    html,body{height:100%;margin:0;font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif;background:#0d0d0d;color:var(--txt)}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
     .card{width:min(560px,92%);background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:28px;box-shadow:0 0 10px #00f7ff22}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -17,40 +17,31 @@
     p{color:var(--muted);margin:.25rem 0}
     input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a3a3a;background:#0f0f0f;color:var(--txt)}
     input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px #00f7ff40}
-    .row{display:flex;gap:.6rem}
     .btn{width:100%;padding:12px;border-radius:12px;border:1px solid transparent;font-weight:700;cursor:pointer}
     .btn-primary{background:var(--brand);color:#031517;box-shadow:0 0 12px #00f7ff}
-    .btn-ghost{background:transparent;border:1px solid var(--stroke);color:var(--txt)}
-    #msg{color:var(--muted);min-height:1.2em;margin-top:10px;white-space:pre-wrap}
-    code{background:#0f1214;padding:.15rem .35rem;border-radius:6px;border:1px solid #2a2a2a}
+    .row{display:flex;flex-direction:column;gap:.6rem;margin-top:12px}
+    #msg{color:var(--muted);min-height:1.2em;margin-top:6px;white-space:pre-line}
+    .hint{font-size:.9rem;color:#9ca3af}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="card">
-      <div class="brand">
-        <div class="dot"></div>
-        <div style="font-weight:800;color:var(--brand);letter-spacing:.5px">GO2cam</div>
-      </div>
+      <div class="brand"><div class="dot"></div><div style="font-weight:800;color:var(--brand)">GO2cam</div></div>
       <h1>Accès sécurisé</h1>
       <p>Entrez votre e-mail pour recevoir un code à 6 chiffres.</p>
 
       <!-- Étape e-mail -->
-      <div id="stepEmail" style="display:flex;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="email" type="email" autocomplete="email" placeholder="Adresse e-mail (celle utilisée par GO2cam)">
-        <div class="row">
-          <button id="sendBtn" class="btn btn-primary">Recevoir le code</button>
-        </div>
+      <div id="stepEmail" class="row">
+        <input id="email" type="email" placeholder="Adresse e-mail" autocomplete="email" />
+        <button id="sendBtn" class="btn btn-primary">Recevoir le code</button>
+        <div class="hint">Utilisez <em>exactement</em> l’adresse e-mail qui a reçu notre message.</div>
       </div>
 
-      <!-- Étape code -->
-      <div id="stepOtp" style="display:none;flex-direction:column;gap:.6rem;margin-top:12px">
-        <input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Code à 6 chiffres"
-               maxlength="6" style="letter-spacing:4px;text-align:center;font-weight:700">
-        <div class="row">
-          <button id="verifyBtn" class="btn btn-primary">Valider le code</button>
-          <button id="backBtn" class="btn btn-ghost" type="button">↩︎ Changer d’e-mail</button>
-        </div>
+      <!-- Étape OTP -->
+      <div id="stepOtp" class="row" style="display:none">
+        <input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Code à 6 chiffres" style="letter-spacing:4px;text-align:center;font-weight:700" />
+        <button id="verifyBtn" class="btn btn-primary">Valider le code</button>
       </div>
 
       <p id="msg"></p>
@@ -60,188 +51,131 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ── CONFIG À AJUSTER ────────────────────────────────────────────────────────
+    // ================= CONFIG =================
     const SUPABASE_URL      = "https://jsmgnchubnkkfhyuadpx.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbWduY2h1Ym5ra2ZoeXVhZHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTI0ODksImV4cCI6MjA3NjM2ODQ4OX0.Q3ZkOKkaYv70tfLz9bEjrkof5RcLbDV_MkXehk8sJ_E";
 
-    // Bucket et chemin (sans "/" initial)
-    const STORAGE_BUCKET    = "prive"; // ⚠️ orthographe exacte du bucket
-    const PRIVATE_FILE_PATH = "client/go2cam_maintenance_2026_v6.html"; // adapter si renommé
+    // Fichier PRIVE à ouvrir (bucket + chemin exact)
+    const STORAGE_BUCKET     = "prive";
+    const PRIVATE_FILE_PATH  = "client/go2cam_maintenance_2026_v6.html"; // << vérifie l’orthographe
+    const EXPIRY_SECONDS     = 900; // 15 minutes
 
-    // Redirection “magic link” (doit être autorisée dans Auth → URL Configuration)
-    const REDIRECT_URL      = "https://salaktum-coder.github.io/CLIENTS/";
-
-    // Durée de validité de l’URL signée (en secondes)
-    const SIGNED_URL_TTL    = 900;
-    // ────────────────────────────────────────────────────────────────────────────
-
-    const supabase  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ==========================================
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const stepEmail = document.getElementById('stepEmail');
     const stepOtp   = document.getElementById('stepOtp');
     const emailEl   = document.getElementById('email');
     const otpEl     = document.getElementById('otp');
     const sendBtn   = document.getElementById('sendBtn');
     const verifyBtn = document.getElementById('verifyBtn');
-    const backBtn   = document.getElementById('backBtn');
     const msg       = document.getElementById('msg');
 
     let currentEmail = null;
 
-    function ui(state, text="") {
-      msg.textContent = text;
-      sendBtn.disabled   = (state === "busy");
-      verifyBtn.disabled = (state === "busy");
+    // Redirection vers le fichier privé (signed URL)
+    async function redirectToPrivateFile() {
+      try {
+        const { data: signed, error: signErr } = await supabase
+          .storage.from(STORAGE_BUCKET)
+          .createSignedUrl(PRIVATE_FILE_PATH, EXPIRY_SECONDS);
+
+        if (signErr || !signed?.signedUrl) {
+          msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier dans Storage).";
+          console.error("Storage signed URL error:", signErr);
+          return;
+        }
+        window.location.href = signed.signedUrl; // plein écran
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "Erreur inattendue lors de l’ouverture du contenu.";
+      }
     }
 
-    function showOtp() {
-      stepEmail.style.display = "none";
-      stepOtp.style.display   = "flex";
-      setTimeout(() => otpEl.focus(), 0);
-    }
-    function showEmail() {
-      stepEmail.style.display = "flex";
-      stepOtp.style.display   = "none";
-      setTimeout(() => emailEl.focus(), 0);
-    }
-
-    // 1) Envoi OTP (e-mail)
+    // Envoi du code (avec whiteliste côté SQL)
     sendBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = (emailEl.value || "").trim();
-      if (!email || !email.includes("@")) {
-        ui("idle","Entrez un e-mail valide.");
+      if (!email.includes('@')) { msg.textContent = "Saisissez un e-mail valide."; return; }
+      msg.textContent = "Vérification de l’adresse…";
+      sendBtn.disabled = true;
+
+      // 1) Vérifie l’adresse autorisée
+      const { data: isAllowed, error: allowErr } = await supabase.rpc('is_email_allowed', { p_email: email });
+      if (allowErr) {
+        console.error(allowErr);
+        msg.textContent = "Erreur de vérification. Réessayez.";
+        sendBtn.disabled = false;
         return;
       }
-      currentEmail = email;
-      ui("busy","Envoi du code…");
+      if (!isAllowed) {
+        msg.textContent = "Adresse non autorisée. Utilisez l’adresse à laquelle nous vous avons écrit.";
+        sendBtn.disabled = false;
+        return;
+      }
 
-      // shouldCreateUser: true → pas besoin de pré-créer l’utilisateur
-      // Les policies Storage/allowed_emails feront le filtrage d’accès.
+      // 2) Envoi OTP
+      msg.textContent = "Envoi du code… (vérifiez vos spams)";
+      const autoRedirect = `${location.origin}${location.pathname}`; // doit être listé dans Auth → URL Configuration
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: true, emailRedirectTo: REDIRECT_URL }
+        options: { shouldCreateUser: true, emailRedirectTo: autoRedirect }
       });
 
+      sendBtn.disabled = false;
+
       if (error) {
-        ui("idle", "Impossible d’envoyer le code : " + (error.message || "erreur inconnue"));
+        console.error(error);
+        const m = (error.message || "").toLowerCase();
+        if (m.includes('signup') || m.includes('signups not allowed')) {
+          msg.textContent = "Envoi impossible : ‘User signups’ est désactivé dans Auth → Settings.";
+        } else if (m.includes('redirect') || m.includes('url')) {
+          msg.textContent = "URL de redirection non autorisée. Ajoutez : " + autoRedirect + " dans Auth → URL Configuration.";
+        } else if (m.includes('rate') || m.includes('limit')) {
+          msg.textContent = "Trop de demandes. Réessayez dans quelques minutes.";
+        } else {
+          msg.textContent = "Impossible d’envoyer le code : " + (error.message || "erreur inconnue");
+        }
         return;
       }
-      ui("idle","Code envoyé. Vérifiez votre boîte mail (et vos spams).");
-      showOtp();
+
+      currentEmail = email;
+      stepEmail.style.display = "none";
+      stepOtp.style.display   = "flex";
+      msg.textContent = "Code envoyé. Entrez le code à 6 chiffres.";
+      otpEl.focus();
     });
 
-    backBtn.addEventListener('click', () => {
-      currentEmail = null;
-      otpEl.value  = "";
-      ui("idle","");
-      showEmail();
-    });
-
-    // 2) Après vérification OTP → génération URL signée + redirection plein écran
+    // Validation du code
     verifyBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const code = (otpEl.value || "").trim();
-      if (!code || code.length < 6) {
-        ui("idle", "Saisissez le code à 6 chiffres.");
-        return;
-      }
-      ui("busy","Vérification du code…");
+      if (!code) { msg.textContent = "Saisissez le code reçu."; return; }
+      msg.textContent = "Vérification du code…";
+      verifyBtn.disabled = true;
 
       const { error } = await supabase.auth.verifyOtp({
         email: currentEmail, token: code, type: "email"
       });
 
+      verifyBtn.disabled = false;
+
       if (error) {
-        ui("idle", "Code invalide ou expiré.");
+        console.error(error);
+        msg.textContent = "Code invalide ou expiré. Demandez un nouveau code.";
         return;
       }
 
-      ui("busy", "Connexion réussie. Ouverture du contenu…");
+      msg.textContent = "Connexion réussie. Ouverture…";
       await redirectToPrivateFile();
     });
 
-    // 3) Redirection directe si déjà connecté
+    // Si déjà connecté → accès direct
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        ui("busy", "Session active détectée. Ouverture du contenu…");
         await redirectToPrivateFile();
       }
     })();
-
-    // ── Redirection avec auto-découverte du fichier si le chemin ne matche pas ──
-    async function redirectToPrivateFile() {
-      try {
-        // 1) Essai direct avec ton chemin déclaré
-        const direct = await supabase
-          .storage.from(STORAGE_BUCKET)
-          .createSignedUrl(PRIVATE_FILE_PATH, SIGNED_URL_TTL);
-
-        if (!direct.error && direct.data?.signedUrl) {
-          window.location.href = direct.data.signedUrl;
-          return;
-        }
-
-        // 2) Si échec → on cherche via storage.objects (même source que ton SQL)
-        const { data: rows, error: qerr } = await supabase
-          .schema('storage')
-          .from('objects')
-          .select('name, metadata')
-          .eq('bucket_id', STORAGE_BUCKET)
-          .ilike('name', 'client/%')
-          .limit(1000);
-
-        if (qerr) {
-          console.error('[storage.objects error]', qerr);
-          const m = (qerr.message || "").toLowerCase();
-          if (m.includes('permission')) {
-            ui("idle","Adresse e-mail non autorisée.\nUtilisez l’adresse qui vous a été communiquée.");
-          } else {
-            ui("idle","Erreur lors de la recherche du fichier (voir console).");
-          }
-          return;
-        }
-
-        if (!rows || rows.length === 0) {
-          ui("idle", "Contenu introuvable (aucun objet sous « client/ »).");
-          return;
-        }
-
-        // On essaye d’abord le chemin exact, puis un .html, puis text/html, sinon le 1er
-        const exact = rows.find(r => r.name === PRIVATE_FILE_PATH);
-        const anyHtmlByName = rows.find(r => /\.html?$/i.test(r.name));
-        const anyHtmlByMime = rows.find(r => (r.metadata?.mimetype || '').includes('text/html'));
-        const chosen = exact || anyHtmlByName || anyHtmlByMime || rows[0];
-
-        if (!chosen) {
-          ui("idle","Contenu introuvable (aucun HTML détecté).");
-          return;
-        }
-
-        const discoveredPath = chosen.name; // ex: "client/go2cam_maintenance_2026_v6.html"
-        const discovered = await supabase
-          .storage.from(STORAGE_BUCKET)
-          .createSignedUrl(discoveredPath, SIGNED_URL_TTL);
-
-        if (discovered.error) {
-          console.error('[createSignedUrl discovered error]', discovered.error);
-          const m2 = (discovered.error.message || "").toLowerCase();
-          if (m2.includes('permission')) {
-            ui("idle","Adresse e-mail non autorisée.\nUtilisez l’adresse qui vous a été communiquée.");
-          } else if (m2.includes('object not found')) {
-            ui("idle","Objet introuvable malgré la détection. Vérifiez la casse et les espaces.");
-          } else {
-            ui("idle","Erreur Storage : " + discovered.error.message);
-          }
-          return;
-        }
-
-        window.location.href = discovered.data.signedUrl;
-      } catch (e) {
-        console.error(e);
-        ui("idle","Erreur inattendue (voir console).");
-      }
-    }
   </script>
 </body>
 </html>
