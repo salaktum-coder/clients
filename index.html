@@ -81,26 +81,83 @@
       el.textContent = isLoading ? textWhenLoading : el.dataset.label;
     }
 
-    async function redirectToPrivateFile() {
-      const { data: signed, error: signErr } = await supabase
-        .storage.from(STORAGE_BUCKET)
-        .createSignedUrl(PRIVATE_FILE_PATH, SIGNED_URL_TTL);
+   <script>
+async function redirectToPrivateFile() {
+  // 1) Tente d'abord avec le chemin déclaré (si c'est le bon, on redirige direct)
+  try {
+    const firstTry = await supabase
+      .storage.from(STORAGE_BUCKET)
+      .createSignedUrl(PRIVATE_FILE_PATH, SIGNED_URL_TTL);
 
-      if (signErr) {
-        const m = (signErr.message || "").toLowerCase();
-        if (m.includes("permission")) {
-          // Message clair si l’e-mail n’est pas dans la table allowed_emails (policy Storage)
-          msg.textContent = "Adresse e-mail non autorisée. Utilisez l’adresse e-mail à laquelle nous vous avons envoyé notre message.";
-        } else if (m.includes("object not found")) {
-          msg.textContent = "Contenu introuvable (vérifiez le chemin du fichier dans Storage).";
-        } else {
-          msg.textContent = "Erreur Storage : " + (signErr.message || "voir console");
-        }
-        return;
-      }
-      // Redirection plein écran vers le contenu privé
-      window.location.href = signed.signedUrl;
+    if (!firstTry.error && firstTry.data?.signedUrl) {
+      window.location.href = firstTry.data.signedUrl;
+      return;
     }
+
+    // 2) Auto-découverte via la table storage.objects (au lieu de Storage.list)
+    const { data: rows, error: qerr } = await supabase
+      .schema('storage')                  // IMPORTANT: schéma "storage"
+      .from('objects')                    // table "objects"
+      .select('name, metadata')           // on récupère le nom et le mimetype
+      .eq('bucket_id', STORAGE_BUCKET)    // dans ton bucket "prive"
+      .ilike('name', 'client/%')          // tout ce qui est sous "client/"
+      .limit(1000);
+
+    if (qerr) {
+      console.error('[storage.objects query error]', qerr);
+      const m = (qerr.message || '').toLowerCase();
+      if (m.includes('permission')) {
+        msg.textContent = "Accès Storage refusé : vérifie la policy SELECT sur storage.objects.";
+      } else {
+        msg.textContent = "Erreur lors de la recherche du fichier (voir console).";
+      }
+      return;
+    }
+
+    if (!rows || rows.length === 0) {
+      msg.innerHTML =
+        "Contenu introuvable (aucun objet sous <code>client/</code>). " +
+        "Vérifie le bucket <code>" + STORAGE_BUCKET + "</code> et le dossier.";
+      return;
+    }
+
+    // Essaie d'abord le nom exact, sinon le premier .html, sinon le premier mimetype text/html
+    const exact = rows.find(r => r.name === PRIVATE_FILE_PATH);
+    const anyHtmlByName = rows.find(r => /\.html?$/i.test(r.name));
+    const anyHtmlByMime = rows.find(r => (r.metadata?.mimetype || '').includes('text/html'));
+    const chosen = exact || anyHtmlByName || anyHtmlByMime || rows[0];
+
+    if (!chosen) {
+      msg.textContent = "Aucun fichier HTML détecté dans client/.";
+      return;
+    }
+
+    const discoveredPath = chosen.name; // ex: "client/go2cam_maintenance_2026_v6.html"
+    console.log('[DISCOVERED]', discoveredPath);
+
+    const secondTry = await supabase
+      .storage.from(STORAGE_BUCKET)
+      .createSignedUrl(discoveredPath, SIGNED_URL_TTL);
+
+    if (secondTry.error) {
+      console.error('[createSignedUrl discovered error]', secondTry.error);
+      const m2 = (secondTry.error.message || '').toLowerCase();
+      if (m2.includes('permission')) {
+        msg.textContent = "Adresse e-mail non autorisée (vérifie la table allowed_emails).";
+      } else if (m2.includes('object not found')) {
+        msg.textContent = "Objet introuvable malgré la découverte. Vérifie la casse et les espaces.";
+      } else {
+        msg.textContent = "Erreur Storage : " + secondTry.error.message;
+      }
+      return;
+    }
+
+    window.location.href = secondTry.data.signedUrl;
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Erreur inattendue (voir console).";
+  }
+}
 
     // 1) Envoi du code OTP
     sendBtn.addEventListener('click', async (e) => {
